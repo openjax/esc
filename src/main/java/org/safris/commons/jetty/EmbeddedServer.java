@@ -1,5 +1,6 @@
 package org.safris.commons.jetty;
 
+import java.lang.reflect.Modifier;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Arrays;
@@ -70,18 +71,20 @@ public class EmbeddedServer {
       handler.addServlet(new ServletHolder(servlet), urlPattern);
   }
 
-  private static void addAllServlets(final Package pkg, final ServletContextHandler handler, final Constraint constraint) {
+  private static void addAllServlets(final Package[] packages, final ServletContextHandler handler, final Constraint constraint) {
     try {
-      final Set<Class<?>> classes = PackageLoader.getSystemPackageLoader().loadPackage(pkg, false);
-      for (final Class<?> cls : classes) {
-        if (HttpServlet.class.isAssignableFrom(cls)) {
-          final HttpServlet servlet = (HttpServlet)cls.newInstance();
+      for (final Package pkg : packages) {
+        final Set<Class<?>> classes = PackageLoader.getSystemPackageLoader().loadPackage(pkg, false);
+        for (final Class<?> cls : classes) {
+          if (!Modifier.isAbstract(cls.getModifiers()) && HttpServlet.class.isAssignableFrom(cls) && cls.getAnnotation(WebServlet.class) != null) {
+            final HttpServlet servlet = (HttpServlet)cls.newInstance();
 
-          final ServletSecurity servletSecurity = cls.getAnnotation(ServletSecurity.class);
-          if (servletSecurity != null)
-            addServlet(handler, constraint, servlet); // FIXME: Finish this! Make this code determine the exact security constraints to apply!
-          else
-            addServlet(handler, servlet);
+            final ServletSecurity servletSecurity = cls.getAnnotation(ServletSecurity.class);
+            if (servletSecurity != null)
+              addServlet(handler, constraint, servlet); // FIXME: Finish this! Make this code determine the exact security constraints to apply!
+            else
+              addServlet(handler, servlet);
+          }
         }
       }
     }
@@ -168,7 +171,7 @@ public class EmbeddedServer {
     final ServletContextHandler servletContextHandler = new ServletContextHandler(ServletContextHandler.SESSIONS);
     final Constraint basicAuthConstraint = getBasicAuthConstraint("user");
     setConstraintSecurityHandler(servletContextHandler, "Restricted", "user", username, password);
-    addAllServlets(Package.getPackage(""), servletContextHandler, basicAuthConstraint);
+    addAllServlets(Package.getPackages(), servletContextHandler, basicAuthConstraint);
 
     final HandlerList handlerList = new HandlerList();
 
