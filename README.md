@@ -6,7 +6,7 @@
 
 This project is a light wrapper of the [Jetty Servlet Container](http://www.eclipse.org/jetty/). This project provides helpful patterns to developers that desire a lightweight embedded solution.
 
-## Why XDE?
+## Why Jetty?
 
 ### CohesionFirst™
 
@@ -25,7 +25,7 @@ This Jetty wrapper is intended to reduce the number of lines of code dedicated t
 ### Prerequisites
 
 * [Java 7](http://www.oracle.com/technetwork/java/javase/downloads/jdk7-downloads-1880260.html) - The minimum required JDK version.
-* [Maven](https://maven.apache.org/) - The dependency management system used to install XDE.
+* [Maven](https://maven.apache.org/) - The dependency management system used to install Jetty.
 
 ### Example
 
