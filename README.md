@@ -25,7 +25,7 @@ Developed with the CohesionFirst™ approach, **commons-jetty** is built to make
 #### Prerequisites
 
 * [Java 7](http://www.oracle.com/technetwork/java/javase/downloads/jdk7-downloads-1880260.html) - The minimum required JDK version.
-* [Maven](https://maven.apache.org/) - The dependency management system used to install Jetty.
+* [Maven](https://maven.apache.org/) - The dependency management system.
 
 #### Example
 
