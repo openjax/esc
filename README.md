@@ -1,33 +1,33 @@
-<img src="http://safris.org/logo.png" align="right" />
-# jetty [![CohesionFirst](http://safris.org/cf2.svg)](https://cohesionfirst.com/)
-> Jetty
+<img src="http://safris.org/logo.png" align="right"/>
+## commons-jetty<br>[![JavaCommons](https://img.shields.io/badge/java-commons-orange.svg)](https://cohesionfirst.com/) [![CohesionFirst](https://img.shields.io/badge/CohesionFirst%E2%84%A2--blue.svg)](https://cohesionfirst.com/)
+> Commons Embedded Jetty Wrapper
 
-## Introduction
+### Introduction
 
-This project is a light wrapper of the [Jetty Servlet Container](http://www.eclipse.org/jetty/). This project provides helpful patterns to developers that desire a lightweight embedded solution.
+This project is a light wrapper of the [Jetty Servlet Container](http://www.eclipse.org/jetty/), which provides helpful patterns to developers that desire a lightweight embedded server solution.
 
-## Why Jetty?
+### Why **commons-jetty**?
 
-### CohesionFirst™
+#### CohesionFirst™
 
-Developed with the CohesionFirst™ approach, this Jetty wrapper is built to make a developer's life better. Made possible by the rigorous conformance to design patterns and best practices in every line of its implementation, this Jetty wrapper is simple to use and easy to understand.
+Developed with the CohesionFirst™ approach, **commons-jetty** is built to make a developer's life easier. Made possible by the rigorous conformance to design patterns and best practices in every line of its implementation, **commons-jetty** is simple to use and easy to understand.
 
-### Simple API for Embedded Servlet Container Initialization
+#### Simple API for Embedded Servlet Container Initialization
 
-This Jetty wrapper provides a simple API a developer may use to initialize a Servlet Container in a JVM, significantly reducing the headache most people have when attempting to accomplish the same with Jetty's raw APIs.
+**commons-jetty** provides a simple API a developer may use to initialize a Servlet Container in a JVM, significantly reducing the headache most people have when attempting to accomplish the same with Jetty's raw APIs.
 
 ### Significantly Reduces Boilerplate Code
 
-This Jetty wrapper is intended to reduce the number of lines of code dedicated to the initialization of the server, therefore reducing the space of possible errors, and thus allowing the developer to move to his next task, confidently assured the server will start.
+**commons-jetty** is intended to reduce the number of lines of code dedicated to the initialization of the server, therefore reducing the space of possible errors, and thus allowing the developer to move to his next task, confidently assured the server will start.
 
-## Getting Started
+### Getting Started
 
-### Prerequisites
+#### Prerequisites
 
 * [Java 7](http://www.oracle.com/technetwork/java/javase/downloads/jdk7-downloads-1880260.html) - The minimum required JDK version.
 * [Maven](https://maven.apache.org/) - The dependency management system used to install Jetty.
 
-### Example
+#### Example
 
 1. In your preferred development directory, create a [`maven-archetype-quickstart`](http://maven.apache.org/archetypes/maven-archetype-quickstart/) project.
 
@@ -52,7 +52,7 @@ This Jetty wrapper is intended to reduce the number of lines of code dedicated t
   </pluginRepositories>
   ```
   
-3. Next, add the `org.safris.commons`:`jetty` dependency to the POM.
+3. Next, add the `org.safris.commons:jetty` dependency to the POM.
 
   ```xml
   <dependency>
@@ -87,6 +87,6 @@ This Jetty wrapper is intended to reduce the number of lines of code dedicated t
 
 9. Run `App`.
 
-## License
+### License
 
 This project is licensed under the MIT License - see the [LICENSE.txt](LICENSE.txt) file for details.
