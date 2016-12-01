@@ -1,10 +1,10 @@
 <img src="http://safris.org/logo.png" align="right"/>
-## commons-jetty<br>[![JavaCommons](https://img.shields.io/badge/java-commons-orange.svg)](https://cohesionfirst.com/) [![CohesionFirst](https://img.shields.io/badge/CohesionFirst%E2%84%A2--blue.svg)](https://cohesionfirst.com/)
+## commons-jetty<br>![java-commons][java-commons] [![CohesionFirst™][cohesionfirst_badge]][cohesionfirst]
 > Commons Embedded Jetty Wrapper
 
 ### Introduction
 
-This project is a light wrapper of the [Jetty Servlet Container](http://www.eclipse.org/jetty/), which provides helpful patterns to developers that desire a lightweight embedded server solution.
+This project is a light wrapper of the [Jetty Servlet Container][jetty], which provides helpful patterns to developers that desire a lightweight embedded server solution.
 
 ### Why **commons-jetty**?
 
@@ -12,9 +12,9 @@ This project is a light wrapper of the [Jetty Servlet Container](http://www.ecli
 
 Developed with the CohesionFirst™ approach, **commons-jetty** is built to make a developer's life easier. Made possible by the rigorous conformance to design patterns and best practices in every line of its implementation, **commons-jetty** is simple to use and easy to understand.
 
-#### Simple API for Embedded Servlet Container Initialization
+#### Cohesive and Simple API for Embedded Servlet Container Initialization
 
-**commons-jetty** provides a simple API a developer may use to initialize a Servlet Container in a JVM, significantly reducing the headache most people have when attempting to accomplish the same with Jetty's raw APIs.
+**commons-jetty** is created to take full advantage of the `javax.servlet.annotation.*` annotations defined in the [Java Servlet v3 Specification of 2009][servlet-v3-spec]. Designed specifically to avoid non-cohesive config files, **commons-jetty** creates a direct and easy to understand embedded wrapper of the Jetty Servlet Container. **commons-jetty** provides a simple API to initialize a Servlet Container in a JVM, significantly reducing the headache most people have when attempting to accomplish the same with Jetty's raw APIs.
 
 ### Significantly Reduces Boilerplate Code
 
@@ -24,12 +24,12 @@ Developed with the CohesionFirst™ approach, **commons-jetty** is built to make
 
 #### Prerequisites
 
-* [Java 7](http://www.oracle.com/technetwork/java/javase/downloads/jdk7-downloads-1880260.html) - The minimum required JDK version.
-* [Maven](https://maven.apache.org/) - The dependency management system.
+* [Java 7][jdk7-download] - The minimum required JDK version.
+* [Maven][maven] - The dependency management system.
 
 #### Example
 
-1. In your preferred development directory, create a [`maven-archetype-quickstart`](http://maven.apache.org/archetypes/maven-archetype-quickstart/) project.
+1. In your preferred development directory, create a [`maven-archetype-quickstart`][maven-archetype-quickstart] project.
 
   ```tcsh
   mvn archetype:generate -DgroupId=com.mycompany.app -DartifactId=my-app -DarchetypeArtifactId=maven-archetype-quickstart -DinteractiveMode=false
@@ -90,3 +90,12 @@ Developed with the CohesionFirst™ approach, **commons-jetty** is built to make
 ### License
 
 This project is licensed under the MIT License - see the [LICENSE.txt](LICENSE.txt) file for details.
+
+[cohesionfirst]: https://www.cohesionfirst.com/
+[cohesionfirst_badge]: https://img.shields.io/badge/CohesionFirst%E2%84%A2--blue.svg
+[java-commons]: https://img.shields.io/badge/java-commons-orange.svg
+[jdk7-download]: http://www.oracle.com/technetwork/java/javase/downloads/jdk7-downloads-1880260.html
+[jetty]: http://www.eclipse.org/jetty/
+[maven-archetype-quickstart]: http://maven.apache.org/archetypes/maven-archetype-quickstart/
+[maven]: https://maven.apache.org/
+[servlet-v3-spec]: http://download.oracle.com/otn-pub/jcp/servlet-3.0-fr-eval-oth-JSpec/servlet-3_0-final-spec.pdf?AuthParam=1480559853_acb6e03a9239ef531494496d67f2d301
