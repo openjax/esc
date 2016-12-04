@@ -1,4 +1,4 @@
-<img src="http://safris.org/logo.png" align="right"/>
+<img src="https://www.cohesionfirst.org/logo.png" align="right"/>
 ## commons-jetty<br>![java-commons][java-commons] [![CohesionFirst™][cohesionfirst_badge]][cohesionfirst]
 > Commons Embedded Jetty Wrapper
 
