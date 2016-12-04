@@ -1,5 +1,5 @@
 <img src="https://www.cohesionfirst.org/logo.png" align="right"/>
-## commons-jetty<br>![java-commons][java-commons] [![CohesionFirst™][cohesionfirst_badge]][cohesionfirst]
+## commons-jetty<br>![java-commons][java-commons] <a href="https://www.cohesionfirst.org/"><img src="https://img.shields.io/badge/CohesionFirst%E2%84%A2--blue.svg"></a>
 > Commons Embedded Jetty Wrapper
 
 ### Introduction
@@ -91,8 +91,6 @@ Developed with the CohesionFirst™ approach, **commons-jetty** is built to make
 
 This project is licensed under the MIT License - see the [LICENSE.txt](LICENSE.txt) file for details.
 
-[cohesionfirst]: https://www.cohesionfirst.com/
-[cohesionfirst_badge]: https://img.shields.io/badge/CohesionFirst%E2%84%A2--blue.svg
 [java-commons]: https://img.shields.io/badge/java-commons-orange.svg
 [jdk7-download]: http://www.oracle.com/technetwork/java/javase/downloads/jdk7-downloads-1880260.html
 [jetty]: http://www.eclipse.org/jetty/
