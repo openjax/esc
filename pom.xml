@@ -27,6 +27,11 @@
   <groupId>org.safris.commons</groupId>
   <artifactId>commons-jetty</artifactId>
   <version>1.1.2</version>
+  <properties>
+    <maven.compiler.source>1.8</maven.compiler.source>
+    <maven.compiler.target>1.8</maven.compiler.target>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
   <name>${project.groupId}:${project.artifactId}</name>
   <dependencies>
     <dependency>
