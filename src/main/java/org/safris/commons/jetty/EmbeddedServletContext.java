@@ -84,15 +84,17 @@ public abstract class EmbeddedServletContext {
   protected static ServletContextHandler createServletContextHandler(final $se_realm realm) {
     final ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
 
-    final HashLoginService login = new HashLoginService(realm._name$().text());
-    for (final $se_realm._credential credential : realm._credential())
-      for (final String role : credential._roles$().text())
-        login.putUser(credential._username$().text(), Credential.getCredential(credential._password$().text()), new String[] {role});
-
     final ConstraintSecurityHandler security = new ConstraintSecurityHandler();
-    security.setAuthenticator(new BasicAuthenticator());
-    security.setRealmName(realm._name$().text());
-    security.setLoginService(login);
+    if (realm != null) {
+      final HashLoginService login = new HashLoginService(realm._name$().text());
+      for (final $se_realm._credential credential : realm._credential())
+        for (final String role : credential._roles$().text())
+          login.putUser(credential._username$().text(), Credential.getCredential(credential._password$().text()), new String[] {role});
+
+      security.setRealmName(realm._name$().text());
+      security.setLoginService(login);
+      security.setAuthenticator(new BasicAuthenticator());
+    }
 
     context.setSecurityHandler(security);
     return context;
