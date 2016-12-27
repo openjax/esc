@@ -24,7 +24,7 @@ Developed with the CohesionFirst™ approach, **commons-jetty** is built to make
 
 #### Prerequisites
 
-* [Java 7][jdk7-download] - The minimum required JDK version.
+* [Java 8][jdk8-download] - The minimum required JDK version.
 * [Maven][maven] - The dependency management system.
 
 #### Example
@@ -92,7 +92,7 @@ Developed with the CohesionFirst™ approach, **commons-jetty** is built to make
 This project is licensed under the MIT License - see the [LICENSE.txt](LICENSE.txt) file for details.
 
 [java-commons]: https://img.shields.io/badge/java-commons-orange.svg
-[jdk7-download]: http://www.oracle.com/technetwork/java/javase/downloads/jdk7-downloads-1880260.html
+[jdk8-download]: http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html
 [jetty]: http://www.eclipse.org/jetty/
 [maven-archetype-quickstart]: http://maven.apache.org/archetypes/maven-archetype-quickstart/
 [maven]: https://maven.apache.org/
