@@ -23,7 +23,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.logging.Logger;
 
 import javax.servlet.DispatcherType;
 import javax.servlet.Filter;
@@ -45,9 +44,11 @@ import org.eclipse.jetty.util.security.Constraint;
 import org.safris.commons.lang.PackageLoader;
 import org.safris.commons.lang.PackageNotFoundException;
 import org.safris.commons.servlet.xe.$se_realm;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class EmbeddedServletContainer extends EmbeddedServletContext {
-  private static final Logger logger = Logger.getLogger(EmbeddedServletContainer.class.getName());
+  private static final Logger logger = LoggerFactory.getLogger(EmbeddedServletContainer.class);
   private static UncaughtServletExceptionHandler uncaughtServletExceptionHandler;
 
   private static Set<Class<? extends HttpServlet>> addedServletClasses = new HashSet<Class<? extends HttpServlet>>();
@@ -59,7 +60,7 @@ public class EmbeddedServletContainer extends EmbeddedServletContext {
 
     final WebServlet webServlet = servletClass.getAnnotation(WebServlet.class);
     if (webServlet == null) {
-      logger.warning("HttpServlet class " + servletClass.getName() + " is missing the @WebServlet annotation");
+      logger.warn("HttpServlet class " + servletClass.getName() + " is missing the @WebServlet annotation");
       return;
     }
 
@@ -68,13 +69,13 @@ public class EmbeddedServletContainer extends EmbeddedServletContext {
       servlet = servletClass.newInstance();
     }
     catch (final IllegalAccessException | InstantiationException e) {
-      logger.warning(e.getMessage());
+      logger.warn(e.getMessage());
       return;
     }
 
     final String[] urlPatterns = webServlet.value().length != 0 ? webServlet.value() : webServlet.urlPatterns();
     if (urlPatterns.length == 0) {
-      logger.warning("HttpServlet class " + servletClass.getName() + " is missing an URL pattern on the @WebServlet annotation");
+      logger.warn("HttpServlet class " + servletClass.getName() + " is missing an URL pattern on the @WebServlet annotation");
       return;
     }
 
@@ -126,7 +127,7 @@ public class EmbeddedServletContainer extends EmbeddedServletContext {
 
     final WebFilter webFilter = filterClass.getAnnotation(WebFilter.class);
     if (webFilter == null) {
-      logger.warning("WebFilter class " + filterClass.getName() + " is missing the @WebFilter annotation");
+      logger.warn("WebFilter class " + filterClass.getName() + " is missing the @WebFilter annotation");
       return;
     }
 
