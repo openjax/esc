@@ -121,7 +121,7 @@ public abstract class EmbeddedServletContext {
         handlerList.addHandler(resourceHandler);
       }
       catch (final IOException e) {
-        throw new Error(e);
+        throw new UnsupportedOperationException(e);
       }
     }
 

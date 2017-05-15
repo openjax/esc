@@ -99,7 +99,7 @@ public class EmbeddedServletContainer extends EmbeddedServletContext {
           constraintMapping.setPathSpec(urlPattern);
           final SecurityHandler securityHandler = context.getSecurityHandler();
           if (!(securityHandler instanceof ConstraintSecurityHandler))
-            throw new Error("SecurityHandler of ServletContextHandler must be a ConstraintSecurityHandler, did you call setConstraintSecurityHandler()?");
+            throw new UnsupportedOperationException("SecurityHandler of ServletContextHandler must be a ConstraintSecurityHandler, did you call setConstraintSecurityHandler()?");
 
           ((ConstraintSecurityHandler)securityHandler).addConstraintMapping(constraintMapping);
         }
