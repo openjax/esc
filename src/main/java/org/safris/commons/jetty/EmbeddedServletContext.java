@@ -38,7 +38,7 @@ import org.eclipse.jetty.util.resource.Resource;
 import org.eclipse.jetty.util.security.Constraint;
 import org.eclipse.jetty.util.security.Credential;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
-import org.safris.commons.lang.Resources;
+import org.lib4j.lang.Resources;
 import org.safris.commons.servlet.xe.$se_realm;
 
 public abstract class EmbeddedServletContext {
