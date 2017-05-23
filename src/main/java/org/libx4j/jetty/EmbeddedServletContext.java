@@ -14,7 +14,7 @@
  * program. If not, see <http://opensource.org/licenses/MIT/>.
  */
 
-package org.safris.commons.jetty;
+package org.libx4j.jetty;
 
 import java.io.IOException;
 import java.net.URL;
