@@ -21,22 +21,22 @@
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>org</groupId>
-    <artifactId>lib4jx</artifactId>
+    <artifactId>libx4j</artifactId>
     <version>2.5.1</version>
   </parent>
-  <groupId>org.lib4jx</groupId>
-  <artifactId>lib4jx-jetty</artifactId>
+  <groupId>org.libx4j</groupId>
+  <artifactId>libx4j-jetty</artifactId>
   <version>1.1.2</version>
+  <name>${project.groupId}:${project.artifactId}</name>
   <properties>
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
-  <name>${project.groupId}:${project.artifactId}</name>
   <build>
     <plugins>
       <plugin>
-        <groupId>org.lib4jx.maven.plugin</groupId>
+        <groupId>org.libx4j.maven.plugin</groupId>
         <artifactId>xsb-maven-plugin</artifactId>
         <configuration>
           <manifest xmlns="http://maven.safris.org/common/manifest.xsd">
@@ -60,23 +60,23 @@
     </dependency>
     <dependency>
       <groupId>org.lib4j</groupId>
-      <artifactId>lib4j-servlet</artifactId>
+      <artifactId>lib4j-net</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.lib4jx.xsb</groupId>
+      <groupId>org.libx4j.xsb</groupId>
       <artifactId>xsb-runtime</artifactId>
     </dependency>
   </dependencies>
   <repositories>
     <repository>
-      <id>mvn.repo.safris.org</id>
-      <url>http://mvn.repo.safris.org/m2</url>
+      <id>mvn.repo.lib4j.org</id>
+      <url>http://mvn.repo.lib4j.org/m2</url>
     </repository>
   </repositories>
   <pluginRepositories>
     <pluginRepository>
-      <id>mvn.repo.safris.org</id>
-      <url>http://mvn.repo.safris.org/m2</url>
+      <id>mvn.repo.lib4j.org</id>
+      <url>http://mvn.repo.lib4j.org/m2</url>
     </pluginRepository>
   </pluginRepositories>
 </project>
