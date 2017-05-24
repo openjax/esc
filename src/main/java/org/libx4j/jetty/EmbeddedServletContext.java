@@ -39,7 +39,7 @@ import org.eclipse.jetty.util.security.Constraint;
 import org.eclipse.jetty.util.security.Credential;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.lib4j.lang.Resources;
-import org.safris.commons.servlet.xe.$se_realm;
+import org.libx4j.jetty.servlet.xe.$se_realm;
 
 public abstract class EmbeddedServletContext {
   private static final Map<String,Map<String,Constraint>> roleToConstraint = new HashMap<String,Map<String,Constraint>>();
