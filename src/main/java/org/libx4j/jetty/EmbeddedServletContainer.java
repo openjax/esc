@@ -148,7 +148,7 @@ public class EmbeddedServletContainer extends EmbeddedServletContext {
 
     for (final Package pkg : Package.getPackages()) {
       try {
-        final Set<Class<?>> classes = PackageLoader.getSystemPackageLoader().loadPackage(pkg, false);
+        final Set<Class<?>> classes = PackageLoader.getSystemContextPackageLoader().loadPackage(pkg, false);
         for (final Class<?> cls : classes) {
           if (!Modifier.isAbstract(cls.getModifiers())) {
             if (HttpServlet.class.isAssignableFrom(cls))
