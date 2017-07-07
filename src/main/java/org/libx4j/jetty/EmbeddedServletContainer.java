@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
 
 import javax.servlet.DispatcherType;
 import javax.servlet.Filter;
@@ -148,15 +149,20 @@ public class EmbeddedServletContainer extends EmbeddedServletContext {
 
     for (final Package pkg : Package.getPackages()) {
       try {
-        final Set<Class<?>> classes = PackageLoader.getSystemContextPackageLoader().loadPackage(pkg, false);
-        for (final Class<?> cls : classes) {
-          if (!Modifier.isAbstract(cls.getModifiers())) {
-            if (HttpServlet.class.isAssignableFrom(cls))
-              addServlet(context, (Class<? extends HttpServlet>)cls);
-            else if (Filter.class.isAssignableFrom(cls) && cls.isAnnotationPresent(WebFilter.class))
-              addFilter(context, (Class<? extends Filter>)cls);
+        PackageLoader.getSystemContextPackageLoader().loadPackage(pkg, new Predicate<Class<?>>() {
+          @Override
+          public boolean test(final Class<?> t) {
+            if (Modifier.isAbstract(t.getModifiers()))
+              return false;
+
+            if (HttpServlet.class.isAssignableFrom(t))
+              addServlet(context, (Class<? extends HttpServlet>)t);
+            else if (Filter.class.isAssignableFrom(t) && t.isAnnotationPresent(WebFilter.class))
+              addFilter(context, (Class<? extends Filter>)t);
+
+            return false;
           }
-        }
+        });
       }
       catch (final PackageNotFoundException | SecurityException e) {
       }
