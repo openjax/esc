@@ -37,6 +37,10 @@
     <plugins>
       <plugin>
         <groupId>org.libx4j.maven.plugin</groupId>
+        <artifactId>xml-maven-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>org.libx4j.maven.plugin</groupId>
         <artifactId>xsb-maven-plugin</artifactId>
         <configuration>
           <manifest xmlns="http://maven.libx4j.org/common/manifest.xsd">
