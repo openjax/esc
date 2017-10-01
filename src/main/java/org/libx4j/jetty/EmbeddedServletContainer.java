@@ -44,7 +44,6 @@ import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.security.Constraint;
 import org.lib4j.lang.PackageLoader;
 import org.lib4j.lang.PackageNotFoundException;
-import org.libx4j.jetty.servlet.xe.$se_realm;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -140,7 +139,7 @@ public class EmbeddedServletContainer extends EmbeddedServletContext {
   }
 
   @SuppressWarnings("unchecked")
-  private static ServletContextHandler addAllServlets(final $se_realm realm, final Class<? extends HttpServlet> ... servletClasses) {
+  private static ServletContextHandler addAllServlets(final Realm realm, final Class<? extends HttpServlet> ... servletClasses) {
     final ServletContextHandler context = createServletContextHandler(realm);
     context.setErrorHandler(new ErrorHandler());
     for (final Class<? extends HttpServlet> servletClass : servletClasses) {
@@ -164,7 +163,7 @@ public class EmbeddedServletContainer extends EmbeddedServletContext {
           }
         });
       }
-      catch (final PackageNotFoundException | SecurityException e) {
+      catch (final PackageNotFoundException e) {
       }
     }
 
@@ -180,7 +179,7 @@ public class EmbeddedServletContainer extends EmbeddedServletContext {
   }
 
   @SafeVarargs
-  public EmbeddedServletContainer(final int port, final String keyStorePath, final String keyStorePassword, final boolean externalResourcesAccess, final $se_realm realm, final Class<? extends HttpServlet> ... servletClasses) {
+  public EmbeddedServletContainer(final int port, final String keyStorePath, final String keyStorePassword, final boolean externalResourcesAccess, final Realm realm, final Class<? extends HttpServlet> ... servletClasses) {
     super(port, keyStorePath, keyStorePassword, externalResourcesAccess, addAllServlets(realm, servletClasses));
   }
 }

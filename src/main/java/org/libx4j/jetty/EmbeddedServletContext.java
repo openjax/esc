@@ -39,7 +39,6 @@ import org.eclipse.jetty.util.security.Constraint;
 import org.eclipse.jetty.util.security.Credential;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.lib4j.lang.Resources;
-import org.libx4j.jetty.servlet.xe.$se_realm;
 
 public abstract class EmbeddedServletContext {
   private static final Map<String,Map<String,Constraint>> roleToConstraint = new HashMap<String,Map<String,Constraint>>();
@@ -81,17 +80,17 @@ public abstract class EmbeddedServletContext {
     return connector;
   }
 
-  protected static ServletContextHandler createServletContextHandler(final $se_realm realm) {
+  protected static ServletContextHandler createServletContextHandler(final Realm realm) {
     final ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
 
     final ConstraintSecurityHandler security = new ConstraintSecurityHandler();
     if (realm != null) {
-      final HashLoginService login = new HashLoginService(realm._name$().text());
-      for (final $se_realm._credential credential : realm._credential())
-        for (final String role : credential._roles$().text())
-          login.putUser(credential._username$().text(), Credential.getCredential(credential._password$().text()), new String[] {role});
+      final HashLoginService login = new HashLoginService(realm.getName());
+      for (final Map.Entry<String,String> entry : realm.getCredentials().entrySet())
+        for (final String role : realm.getRoles())
+          login.putUser(entry.getKey(), Credential.getCredential(entry.getValue()), new String[] {role});
 
-      security.setRealmName(realm._name$().text());
+      security.setRealmName(realm.getName());
       security.setLoginService(login);
       security.setAuthenticator(new BasicAuthenticator());
     }

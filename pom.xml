@@ -39,18 +39,6 @@
         <groupId>org.libx4j.maven.plugin</groupId>
         <artifactId>xml-maven-plugin</artifactId>
       </plugin>
-      <plugin>
-        <groupId>org.libx4j.maven.plugin</groupId>
-        <artifactId>xsb-maven-plugin</artifactId>
-        <configuration>
-          <manifest xmlns="http://maven.libx4j.org/common/manifest.xsd">
-            <destdir>generated-sources/xsb</destdir>
-            <resources>
-              <resource>src/main/resources/servlet.xsd</resource>
-            </resources>
-          </manifest>
-        </configuration>
-      </plugin>
     </plugins>    
   </build>
   <dependencies>
@@ -65,10 +53,6 @@
     <dependency>
       <groupId>org.lib4j</groupId>
       <artifactId>lib4j-net</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.libx4j.xsb</groupId>
-      <artifactId>xsb-runtime</artifactId>
     </dependency>
   </dependencies>
   <repositories>
