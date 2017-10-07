@@ -1,25 +1,25 @@
 <img src="https://www.cohesionfirst.org/logo.png" align="right">
 
-## lib4j-jetty<br>![java-commons][java-commons] <a href="https://www.cohesionfirst.org/"><img src="https://img.shields.io/badge/CohesionFirst%E2%84%A2--blue.svg"></a>
+## libx4j-jetty<br>![java-commons][java-commons] <a href="https://www.cohesionfirst.org/"><img src="https://img.shields.io/badge/CohesionFirst%E2%84%A2--blue.svg"></a>
 > Commons Embedded Jetty Wrapper
 
 ### Introduction
 
 This project is a light wrapper of the [Jetty Servlet Container][jetty], which provides helpful patterns to developers that desire a lightweight embedded server solution.
 
-### Why **lib4j-jetty**?
+### Why **libx4j-jetty**?
 
 #### CohesionFirst™
 
-Developed with the CohesionFirst™ approach, **lib4j-jetty** is built to make a developer's life easier. Made possible by the rigorous conformance to design patterns and best practices in every line of its implementation, **commons-jetty** is simple to use and easy to understand.
+Developed with the CohesionFirst™ approach, **libx4j-jetty** is built to make a developer's life easier. Made possible by the rigorous conformance to design patterns and best practices in every line of its implementation, **commons-jetty** is simple to use and easy to understand.
 
 #### Cohesive and Simple API for Embedded Servlet Container Initialization
 
-**lib4j-jetty** is created to take full advantage of the `javax.servlet.annotation.*` annotations defined in the [Java Servlet v3 Specification of 2009][servlet-v3-spec]. Designed specifically to avoid non-cohesive config files, **commons-jetty** creates a direct and easy to understand embedded wrapper of the Jetty Servlet Container. **commons-jetty** provides a simple API to initialize a Servlet Container in a JVM, significantly reducing the headache most people have when attempting to accomplish the same with Jetty's raw APIs.
+**libx4j-jetty** is created to take full advantage of the `javax.servlet.annotation.*` annotations defined in the [Java Servlet v3 Specification of 2009][servlet-v3-spec]. Designed specifically to avoid non-cohesive config files, **commons-jetty** creates a direct and easy to understand embedded wrapper of the Jetty Servlet Container. **commons-jetty** provides a simple API to initialize a Servlet Container in a JVM, significantly reducing the headache most people have when attempting to accomplish the same with Jetty's raw APIs.
 
 ### Significantly Reduces Boilerplate Code
 
-**lib4j-jetty** is intended to reduce the number of lines of code dedicated to the initialization of the server, therefore reducing the space of possible errors, and thus allowing the developer to move to his next task, confidently assured the server will start.
+**libx4j-jetty** is intended to reduce the number of lines of code dedicated to the initialization of the server, therefore reducing the space of possible errors, and thus allowing the developer to move to his next task, confidently assured the server will start.
 
 ### Getting Started
 
@@ -57,9 +57,9 @@ Developed with the CohesionFirst™ approach, **lib4j-jetty** is built to make a
 
   ```xml
   <dependency>
-    <groupId>org.lib4j</groupId>
-    <artifactId>jetty</artifactId>
-    <version>1.1.2</version>
+    <groupId>org.libx4j</groupId>
+    <artifactId>libx4j-jetty</artifactId>
+    <version>1.1.3-SNAPSHOT</version>
   </dependency>
   ```
 
@@ -70,7 +70,7 @@ Developed with the CohesionFirst™ approach, **lib4j-jetty** is built to make a
     public static void main(final String[] args) {
     }
     
-    public App(final int port, final String keyStorePath, final String keyStorePassword, final boolean externalResourcesAccess, final $se_realm realm, final Class<? extends HttpServlet> ... servletClasses) {
+    public App(final int port, final String keyStorePath, final String keyStorePassword, final boolean externalResourcesAccess, final Realm realm, final Class<? extends HttpServlet> ... servletClasses) {
       super(port, keyStorePath, keyStorePassword, externalResourcesAccess, realm, servletClasses);
     }
   }
