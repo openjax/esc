@@ -16,6 +16,7 @@
 
 package org.libx4j.jetty;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.EnumSet;
@@ -66,9 +67,9 @@ public class EmbeddedServletContainer extends EmbeddedServletContext {
 
     final HttpServlet servlet;
     try {
-      servlet = servletClass.newInstance();
+      servlet = servletClass.getDeclaredConstructor().newInstance();
     }
-    catch (final IllegalAccessException | InstantiationException e) {
+    catch (final IllegalAccessException | InstantiationException | InvocationTargetException | NoSuchMethodException e) {
       logger.warn(e.getMessage());
       return;
     }
