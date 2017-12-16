@@ -21,16 +21,22 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import org.eclipse.jetty.security.ConstraintSecurityHandler;
 import org.eclipse.jetty.security.HashLoginService;
 import org.eclipse.jetty.security.authentication.BasicAuthenticator;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.Response;
 import org.eclipse.jetty.server.SecureRequestCustomizer;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SslConnectionFactory;
+import org.eclipse.jetty.server.handler.ErrorHandler;
 import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.server.handler.ResourceHandler;
 import org.eclipse.jetty.servlet.ServletContextHandler;
@@ -83,19 +89,28 @@ public abstract class EmbeddedServletContext {
   protected static ServletContextHandler createServletContextHandler(final Realm realm) {
     final ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
 
-    final ConstraintSecurityHandler security = new ConstraintSecurityHandler();
+    final ConstraintSecurityHandler securityHandler = new ConstraintSecurityHandler();
     if (realm != null) {
       final HashLoginService login = new HashLoginService(realm.getName());
       for (final Map.Entry<String,String> entry : realm.getCredentials().entrySet())
         for (final String role : realm.getRoles())
           login.putUser(entry.getKey(), Credential.getCredential(entry.getValue()), new String[] {role});
 
-      security.setRealmName(realm.getName());
-      security.setLoginService(login);
-      security.setAuthenticator(new BasicAuthenticator());
+      securityHandler.setRealmName(realm.getName());
+      securityHandler.setLoginService(login);
+      securityHandler.setAuthenticator(new BasicAuthenticator());
     }
 
-    context.setSecurityHandler(security);
+    context.setSecurityHandler(securityHandler);
+    context.setErrorHandler(new ErrorHandler() {
+      @Override
+      public void handle(final String target, final Request baseRequest, final HttpServletRequest request, final HttpServletResponse response) throws IOException {
+        final Response jettyResponse = (Response)response;
+        final String reason = jettyResponse.getReason();
+        final String prefix = "HTTP " + jettyResponse.getStatus() + " ";
+        response.getWriter().append("{\"status\":").append(String.valueOf(jettyResponse.getStatus())).append(",\"message\":\"").append(reason.startsWith(prefix) ? reason.substring(prefix.length()) : reason).append("\"}");
+      }
+    });
     return context;
   }
 
