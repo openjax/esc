@@ -108,7 +108,11 @@ public abstract class EmbeddedServletContext {
         final Response jettyResponse = (Response)response;
         final String reason = jettyResponse.getReason();
         final String prefix = "HTTP " + jettyResponse.getStatus() + " ";
-        response.getWriter().append("{\"status\":").append(String.valueOf(jettyResponse.getStatus())).append(",\"message\":\"").append(reason.startsWith(prefix) ? reason.substring(prefix.length()) : reason).append("\"}");
+        response.getWriter().append("{\"status\":").append(String.valueOf(jettyResponse.getStatus()));
+        if (reason != null)
+          response.getWriter().append(",\"message\":\"").append(reason.startsWith(prefix) ? reason.substring(prefix.length()) : reason).append("\"");
+
+        response.getWriter().append("}");
       }
     });
     return context;
