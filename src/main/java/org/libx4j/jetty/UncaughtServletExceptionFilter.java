@@ -40,23 +40,23 @@ public class UncaughtServletExceptionFilter implements Filter {
       chain.doFilter(request, response);
     }
     catch (final Exception e1) {
-      if (uncaughtExceptionHandler != null) {
-        try {
-          uncaughtExceptionHandler.uncaughtServletException(request, response, e1);
-        }
-        catch (final Throwable e2) {
-          if (e2 instanceof IOException)
-            throw (IOException)e2;
-
-          if (e2 instanceof ServletException)
-            throw (ServletException)e2;
-
-          if (e2 instanceof RuntimeException)
-            throw (RuntimeException)e2;
-        }
-      }
-      else {
+      if (uncaughtExceptionHandler == null)
         throw e1;
+
+      try {
+        uncaughtExceptionHandler.uncaughtServletException(request, response, e1);
+      }
+      catch (final Throwable e2) {
+        if (e2 instanceof IOException)
+          throw (IOException)e2;
+
+        if (e2 instanceof ServletException)
+          throw (ServletException)e2;
+
+        if (e2 instanceof RuntimeException)
+          throw (RuntimeException)e2;
+
+        e2.printStackTrace();
       }
     }
   }
