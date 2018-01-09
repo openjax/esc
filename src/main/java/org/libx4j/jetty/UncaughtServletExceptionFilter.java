@@ -45,17 +45,9 @@ public class UncaughtServletExceptionFilter implements Filter {
 
       try {
         uncaughtExceptionHandler.uncaughtServletException(request, response, e1);
+        throw e1;
       }
-      catch (final Throwable e2) {
-        if (e2 instanceof IOException)
-          throw (IOException)e2;
-
-        if (e2 instanceof ServletException)
-          throw (ServletException)e2;
-
-        if (e2 instanceof RuntimeException)
-          throw (RuntimeException)e2;
-
+      catch (final RuntimeException e2) {
         e2.printStackTrace();
       }
     }
