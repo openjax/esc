@@ -17,6 +17,7 @@
 package org.libx4j.jetty;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
@@ -108,11 +109,16 @@ public abstract class EmbeddedServletContext {
         final Response jettyResponse = (Response)response;
         final String reason = jettyResponse.getReason();
         final String prefix = "HTTP " + jettyResponse.getStatus() + " ";
-        response.getWriter().append("{\"status\":").append(String.valueOf(jettyResponse.getStatus()));
-        if (reason != null)
-          response.getWriter().append(",\"message\":\"").append(reason.startsWith(prefix) ? reason.substring(prefix.length()) : reason).append("\"");
+        final OutputStream out = response.getOutputStream();
+        out.write("{\"status\":".getBytes());
+        out.write(String.valueOf(jettyResponse.getStatus()).getBytes());
+        if (reason != null) {
+          out.write(",\"message\":\"".getBytes());
+          out.write((reason.startsWith(prefix) ? reason.substring(prefix.length()) : reason).getBytes());
+          out.write("\"".getBytes());
+        }
 
-        response.getWriter().append("}");
+        out.write("}".getBytes());
       }
     });
     return context;
