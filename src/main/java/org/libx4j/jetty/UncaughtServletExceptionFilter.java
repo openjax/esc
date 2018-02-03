@@ -27,7 +27,7 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.annotation.WebFilter;
 
-@WebFilter(filterName = "UncaughtServletExceptionFilter", urlPatterns = {"/*"}, dispatcherTypes = {DispatcherType.REQUEST})
+@WebFilter(filterName="UncaughtServletExceptionFilter", urlPatterns="/*", dispatcherTypes=DispatcherType.REQUEST)
 public class UncaughtServletExceptionFilter implements Filter {
   @Override
   public void init(final FilterConfig filterConfig) throws ServletException {
