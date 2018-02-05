@@ -49,10 +49,20 @@ import org.slf4j.LoggerFactory;
 
 public class EmbeddedServletContainer extends EmbeddedServletContext {
   private static final Logger logger = LoggerFactory.getLogger(EmbeddedServletContainer.class);
+
+  private static final Set<Class<? extends HttpServlet>> addedServletClasses = new HashSet<Class<? extends HttpServlet>>();
+  private static final Set<Class<? extends Filter>> addedFilterClasses = new HashSet<Class<? extends Filter>>();
+  private static final String[] excludeStartsWith = {"jdk", "java", "javax", "com.sun", "sun", "org.w3c", "org.xml", "org.jvnet", "org.joda", "org.jcp", "apple.security"};
+
   private static UncaughtServletExceptionHandler uncaughtServletExceptionHandler;
 
-  private static Set<Class<? extends HttpServlet>> addedServletClasses = new HashSet<Class<? extends HttpServlet>>();
-  private static Set<Class<? extends Filter>> addedFilterClasses = new HashSet<Class<? extends Filter>>();
+  private static boolean acceptPackage(final Package pkg) {
+    for (int i = 0; i < excludeStartsWith.length; i++)
+      if (pkg.getName().startsWith(excludeStartsWith[i] + "."))
+        return false;
+
+    return true;
+  }
 
   private static void addServlet(final ServletContextHandler context, final Class<? extends HttpServlet> servletClass) {
     if (addedServletClasses.contains(servletClass))
@@ -146,23 +156,25 @@ public class EmbeddedServletContainer extends EmbeddedServletContext {
     }
 
     for (final Package pkg : Package.getPackages()) {
-      try {
-        PackageLoader.getSystemContextPackageLoader().loadPackage(pkg, new Predicate<Class<?>>() {
-          @Override
-          public boolean test(final Class<?> t) {
-            if (Modifier.isAbstract(t.getModifiers()))
+      if (acceptPackage(pkg)) {
+        try {
+          PackageLoader.getSystemContextPackageLoader().loadPackage(pkg, new Predicate<Class<?>>() {
+            @Override
+            public boolean test(final Class<?> t) {
+              if (Modifier.isAbstract(t.getModifiers()))
+                return false;
+
+              if (HttpServlet.class.isAssignableFrom(t))
+                addServlet(context, (Class<? extends HttpServlet>)t);
+              else if (Filter.class.isAssignableFrom(t) && t.isAnnotationPresent(WebFilter.class))
+                addFilter(context, (Class<? extends Filter>)t);
+
               return false;
-
-            if (HttpServlet.class.isAssignableFrom(t))
-              addServlet(context, (Class<? extends HttpServlet>)t);
-            else if (Filter.class.isAssignableFrom(t) && t.isAnnotationPresent(WebFilter.class))
-              addFilter(context, (Class<? extends Filter>)t);
-
-            return false;
-          }
-        });
-      }
-      catch (final PackageNotFoundException e) {
+            }
+          });
+        }
+        catch (final PackageNotFoundException e) {
+        }
       }
     }
 
