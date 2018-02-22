@@ -16,8 +16,11 @@
 
 package org.libx4j.jetty;
 
+import java.io.IOException;
+import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
+import java.net.URL;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -35,19 +38,40 @@ import javax.servlet.annotation.WebFilter;
 import javax.servlet.annotation.WebInitParam;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import org.eclipse.jetty.security.ConstraintMapping;
 import org.eclipse.jetty.security.ConstraintSecurityHandler;
+import org.eclipse.jetty.security.HashLoginService;
 import org.eclipse.jetty.security.SecurityHandler;
+import org.eclipse.jetty.security.UserStore;
+import org.eclipse.jetty.security.authentication.BasicAuthenticator;
+import org.eclipse.jetty.server.Connector;
+import org.eclipse.jetty.server.HttpConfiguration;
+import org.eclipse.jetty.server.HttpConnectionFactory;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.Response;
+import org.eclipse.jetty.server.SecureRequestCustomizer;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
+import org.eclipse.jetty.server.SslConnectionFactory;
+import org.eclipse.jetty.server.handler.ErrorHandler;
+import org.eclipse.jetty.server.handler.HandlerList;
+import org.eclipse.jetty.server.handler.ResourceHandler;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
+import org.eclipse.jetty.util.resource.Resource;
 import org.eclipse.jetty.util.security.Constraint;
+import org.eclipse.jetty.util.security.Credential;
+import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.lib4j.lang.PackageLoader;
 import org.lib4j.lang.PackageNotFoundException;
+import org.lib4j.lang.Resources;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class EmbeddedServletContainer extends EmbeddedServletContext {
+public class EmbeddedServletContainer {
   private static final Logger logger = LoggerFactory.getLogger(EmbeddedServletContainer.class);
 
   private static final Set<Class<? extends HttpServlet>> addedServletClasses = new HashSet<Class<? extends HttpServlet>>();
@@ -62,6 +86,26 @@ public class EmbeddedServletContainer extends EmbeddedServletContext {
         return false;
 
     return true;
+  }
+
+  private static final Map<String,Map<String,Constraint>> roleToConstraint = new HashMap<String,Map<String,Constraint>>();
+
+  private static Constraint getConstraint(final Map<String,Constraint> authTypeToConstraint, final String authType, final String role) {
+    Constraint constraint = authTypeToConstraint.get(authType);
+    if (constraint != null)
+      return constraint;
+
+    authTypeToConstraint.put(authType, constraint = new Constraint(authType, role));
+    constraint.setAuthenticate(true);
+    return constraint;
+  }
+
+  private static Constraint getBasicAuthConstraint(final String authType, final String role) {
+    Map<String,Constraint> authTypeToConstraint = roleToConstraint.get(role);
+    if (authTypeToConstraint == null)
+      roleToConstraint.put(role, authTypeToConstraint = new HashMap<String,Constraint>());
+
+    return getConstraint(authTypeToConstraint, authType, role);
   }
 
   private static void addServlet(final ServletContextHandler context, final Class<? extends HttpServlet> servletClass) {
@@ -148,32 +192,79 @@ public class EmbeddedServletContainer extends EmbeddedServletContext {
     }
   }
 
-  @SuppressWarnings("unchecked")
-  private static ServletContextHandler addAllServlets(final Realm realm, final Class<? extends HttpServlet> ... servletClasses) {
-    final ServletContextHandler context = createServletContextHandler(realm);
-    for (final Class<? extends HttpServlet> servletClass : servletClasses) {
-      addServlet(context, servletClass);
+  private static ServletContextHandler createServletContextHandler(final Realm realm) {
+    final ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
+
+    final ConstraintSecurityHandler securityHandler = new ConstraintSecurityHandler();
+    if (realm != null) {
+      final HashLoginService login = new HashLoginService(realm.getName());
+      final UserStore userStore = new UserStore();
+      for (final Map.Entry<String,String> entry : realm.getCredentials().entrySet())
+        for (final String role : realm.getRoles())
+          userStore.addUser(entry.getKey(), Credential.getCredential(entry.getValue()), new String[] {role});
+
+      login.setUserStore(userStore);
+      securityHandler.setRealmName(realm.getName());
+      securityHandler.setLoginService(login);
+      securityHandler.setAuthenticator(new BasicAuthenticator());
     }
 
-    for (final Package pkg : Package.getPackages()) {
-      if (acceptPackage(pkg)) {
-        try {
-          PackageLoader.getSystemContextPackageLoader().loadPackage(pkg, new Predicate<Class<?>>() {
-            @Override
-            public boolean test(final Class<?> t) {
-              if (Modifier.isAbstract(t.getModifiers()))
-                return false;
-
-              if (HttpServlet.class.isAssignableFrom(t))
-                addServlet(context, (Class<? extends HttpServlet>)t);
-              else if (Filter.class.isAssignableFrom(t) && t.isAnnotationPresent(WebFilter.class))
-                addFilter(context, (Class<? extends Filter>)t);
-
-              return false;
-            }
-          });
+    context.setSecurityHandler(securityHandler);
+    context.setErrorHandler(new ErrorHandler() {
+      @Override
+      public void handle(final String target, final Request baseRequest, final HttpServletRequest request, final HttpServletResponse response) throws IOException {
+        final Response jettyResponse = (Response)response;
+        final String reason = jettyResponse.getReason();
+        final String prefix = "HTTP " + jettyResponse.getStatus() + " ";
+        final OutputStream out = response.getOutputStream();
+        out.write("{\"status\":".getBytes());
+        out.write(String.valueOf(jettyResponse.getStatus()).getBytes());
+        if (reason != null) {
+          out.write(",\"message\":\"".getBytes());
+          out.write((reason.startsWith(prefix) ? reason.substring(prefix.length()) : reason).getBytes());
+          out.write("\"".getBytes());
         }
-        catch (final PackageNotFoundException e) {
+
+        out.write("}".getBytes());
+      }
+    });
+    return context;
+  }
+
+  @SuppressWarnings("unchecked")
+  private static ServletContextHandler addAllServlets(final Realm realm, final Class<? extends HttpServlet>[] servletClasses, final Class<? extends Filter>[] filterClasses) {
+    final ServletContextHandler context = createServletContextHandler(realm);
+    if (servletClasses != null)
+      for (final Class<? extends HttpServlet> servletClass : servletClasses)
+        addServlet(context, servletClass);
+
+    // FIXME: Without the UncaughtServletExceptionFilter, errors would lead to: net::ERR_INCOMPLETE_CHUNKED_ENCODING
+    addFilter(context, UncaughtServletExceptionFilter.class);
+    if (filterClasses != null)
+      for (final Class<? extends Filter> filterClass : filterClasses)
+        addFilter(context, filterClass);
+
+    if (servletClasses == null || filterClasses == null) {
+      for (final Package pkg : Package.getPackages()) {
+        if (acceptPackage(pkg)) {
+          try {
+            PackageLoader.getSystemContextPackageLoader().loadPackage(pkg, new Predicate<Class<?>>() {
+              @Override
+              public boolean test(final Class<?> t) {
+                if (Modifier.isAbstract(t.getModifiers()))
+                  return false;
+
+                if (servletClasses == null && HttpServlet.class.isAssignableFrom(t))
+                  addServlet(context, (Class<? extends HttpServlet>)t);
+                else if (filterClasses == null && Filter.class.isAssignableFrom(t) && t.isAnnotationPresent(WebFilter.class))
+                  addFilter(context, (Class<? extends Filter>)t);
+
+                return false;
+              }
+            });
+          }
+          catch (final PackageNotFoundException e) {
+          }
         }
       }
     }
@@ -189,8 +280,61 @@ public class EmbeddedServletContainer extends EmbeddedServletContext {
     return EmbeddedServletContainer.uncaughtServletExceptionHandler;
   }
 
-  @SafeVarargs
-  public EmbeddedServletContainer(final int port, final String keyStorePath, final String keyStorePassword, final boolean externalResourcesAccess, final Realm realm, final Class<? extends HttpServlet> ... servletClasses) {
-    super(port, keyStorePath, keyStorePassword, externalResourcesAccess, addAllServlets(realm, servletClasses));
+  private static Connector makeConnector(final Server server, final int port, final String keyStorePath, final String keyStorePassword) {
+    if (keyStorePath == null || keyStorePassword == null) {
+      final ServerConnector connector = new ServerConnector(server);
+      connector.setPort(port);
+      return connector;
+    }
+
+    final HttpConfiguration https = new HttpConfiguration();
+    https.addCustomizer(new SecureRequestCustomizer());
+
+    final SslContextFactory sslContextFactory = new SslContextFactory();
+    sslContextFactory.setKeyStorePath(Resources.getResource(keyStorePath).getURL().toExternalForm());
+    sslContextFactory.setKeyStorePassword(keyStorePassword);
+
+    final ServerConnector connector = new ServerConnector(server, new SslConnectionFactory(sslContextFactory, "http/1.1"), new HttpConnectionFactory(https));
+    connector.setPort(port);
+    return connector;
+  }
+
+  private final Server server = new Server();
+
+  public EmbeddedServletContainer(final int port, final String keyStorePath, final String keyStorePassword, final boolean externalResourcesAccess, final Realm realm, final Class<? extends HttpServlet>[] servletClasses, final Class<? extends Filter>[] filterClasses) {
+    final ServletContextHandler context = addAllServlets(realm, servletClasses, filterClasses);
+    server.setConnectors(new Connector[] {makeConnector(server, port, keyStorePath, keyStorePassword)});
+    server.setErrorHandler(context.getErrorHandler());
+
+    final HandlerList handlerList = new HandlerList();
+
+    if (externalResourcesAccess) {
+      // FIXME: HACK: Why cannot I just get the "/" resource? In the IDE it works, but in the stand-alone jar, it does not
+      try {
+        final String resourceName = getClass().getName().replace('.', '/') + ".class";
+        final String configResourcePath = Thread.currentThread().getContextClassLoader().getResource(resourceName).toExternalForm();
+        final URL rootResourceURL = new URL(configResourcePath.substring(0, configResourcePath.length() - resourceName.length()));
+
+        final ResourceHandler resourceHandler = new ResourceHandler();
+        resourceHandler.setDirectoriesListed(true);
+        resourceHandler.setBaseResource(Resource.newResource(rootResourceURL));
+
+        handlerList.addHandler(resourceHandler);
+      }
+      catch (final IOException e) {
+        throw new UnsupportedOperationException(e);
+      }
+    }
+
+    handlerList.addHandler(context);
+    server.setHandler(handlerList);
+  }
+
+  public void start() throws Exception {
+    server.start();
+  }
+
+  public void join() throws InterruptedException {
+    server.join();
   }
 }
