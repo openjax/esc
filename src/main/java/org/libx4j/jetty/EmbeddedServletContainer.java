@@ -17,7 +17,6 @@
 package org.libx4j.jetty;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 import java.net.URL;
@@ -38,8 +37,6 @@ import javax.servlet.annotation.WebFilter;
 import javax.servlet.annotation.WebInitParam;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 import org.eclipse.jetty.security.ConstraintMapping;
 import org.eclipse.jetty.security.ConstraintSecurityHandler;
@@ -48,16 +45,16 @@ import org.eclipse.jetty.security.SecurityHandler;
 import org.eclipse.jetty.security.UserStore;
 import org.eclipse.jetty.security.authentication.BasicAuthenticator;
 import org.eclipse.jetty.server.Connector;
+import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.Response;
 import org.eclipse.jetty.server.SecureRequestCustomizer;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
+import org.eclipse.jetty.server.Slf4jRequestLog;
 import org.eclipse.jetty.server.SslConnectionFactory;
-import org.eclipse.jetty.server.handler.ErrorHandler;
-import org.eclipse.jetty.server.handler.HandlerList;
+import org.eclipse.jetty.server.handler.HandlerCollection;
+import org.eclipse.jetty.server.handler.RequestLogHandler;
 import org.eclipse.jetty.server.handler.ResourceHandler;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
@@ -195,8 +192,8 @@ public class EmbeddedServletContainer implements AutoCloseable {
   private static ServletContextHandler createServletContextHandler(final Realm realm) {
     final ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
 
-    final ConstraintSecurityHandler securityHandler = new ConstraintSecurityHandler();
     if (realm != null) {
+      final ConstraintSecurityHandler securityHandler = new ConstraintSecurityHandler();
       final HashLoginService login = new HashLoginService(realm.getName());
       final UserStore userStore = new UserStore();
       for (final Map.Entry<String,String> entry : realm.getCredentials().entrySet())
@@ -207,27 +204,9 @@ public class EmbeddedServletContainer implements AutoCloseable {
       securityHandler.setRealmName(realm.getName());
       securityHandler.setLoginService(login);
       securityHandler.setAuthenticator(new BasicAuthenticator());
+      context.setSecurityHandler(securityHandler);
     }
 
-    context.setSecurityHandler(securityHandler);
-    context.setErrorHandler(new ErrorHandler() {
-      @Override
-      public void handle(final String target, final Request baseRequest, final HttpServletRequest request, final HttpServletResponse response) throws IOException {
-        final Response jettyResponse = (Response)response;
-        final String reason = jettyResponse.getReason();
-        final String prefix = "HTTP " + jettyResponse.getStatus() + " ";
-        final OutputStream out = response.getOutputStream();
-        out.write("{\"status\":".getBytes());
-        out.write(String.valueOf(jettyResponse.getStatus()).getBytes());
-        if (reason != null) {
-          out.write(",\"message\":\"".getBytes());
-          out.write((reason.startsWith(prefix) ? reason.substring(prefix.length()) : reason).getBytes());
-          out.write("\"".getBytes());
-        }
-
-        out.write("}".getBytes());
-      }
-    });
     return context;
   }
 
@@ -304,9 +283,10 @@ public class EmbeddedServletContainer implements AutoCloseable {
   public EmbeddedServletContainer(final int port, final String keyStorePath, final String keyStorePassword, final boolean externalResourcesAccess, final Realm realm, final Set<Class<? extends HttpServlet>> servletClasses, final Set<Class<? extends Filter>> filterClasses) {
     final ServletContextHandler context = addAllServlets(realm, servletClasses, filterClasses);
     server.setConnectors(new Connector[] {makeConnector(server, port, keyStorePath, keyStorePassword)});
-    server.setErrorHandler(context.getErrorHandler());
 
-    final HandlerList handlerList = new HandlerList();
+    final HandlerCollection handlers = new HandlerCollection();
+    for (final Handler handler : server.getHandlers())
+      handlers.addHandler(handler);
 
     if (externalResourcesAccess) {
       // FIXME: HACK: Why cannot I just get the "/" resource? In the IDE it works, but in the stand-alone jar, it does not
@@ -319,15 +299,23 @@ public class EmbeddedServletContainer implements AutoCloseable {
         resourceHandler.setDirectoriesListed(true);
         resourceHandler.setBaseResource(Resource.newResource(rootResourceURL));
 
-        handlerList.addHandler(resourceHandler);
+        handlers.addHandler(resourceHandler);
       }
       catch (final IOException e) {
         throw new UnsupportedOperationException(e);
       }
     }
 
-    handlerList.addHandler(context);
-    server.setHandler(handlerList);
+    handlers.addHandler(context);
+
+    final RequestLogHandler requestLogHandler = new RequestLogHandler();
+    requestLogHandler.setServer(server);
+    final Slf4jRequestLog requestLog = new Slf4jRequestLog();
+    requestLog.setPreferProxiedForAddress(true);
+    requestLogHandler.setRequestLog(requestLog);
+    handlers.addHandler(requestLogHandler);
+
+    server.setHandler(handlers);
   }
 
   public void start() throws Exception {

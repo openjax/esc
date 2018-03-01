@@ -45,9 +45,11 @@ public class UncaughtServletExceptionFilter implements Filter {
 
       try {
         uncaughtExceptionHandler.uncaughtServletException(request, response, e1);
+        throw e1;
       }
       catch (final RuntimeException e2) {
-        e2.printStackTrace();
+        e2.addSuppressed(e1);
+        throw e2;
       }
     }
   }
