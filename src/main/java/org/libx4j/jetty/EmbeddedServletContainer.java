@@ -31,7 +31,6 @@ import java.util.function.Predicate;
 import javax.servlet.DispatcherType;
 import javax.servlet.Filter;
 import javax.servlet.MultipartConfigElement;
-import javax.servlet.annotation.HttpConstraint;
 import javax.servlet.annotation.ServletSecurity;
 import javax.servlet.annotation.WebFilter;
 import javax.servlet.annotation.WebInitParam;
@@ -64,7 +63,6 @@ import org.eclipse.jetty.util.security.Credential;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.lib4j.lang.PackageLoader;
 import org.lib4j.lang.PackageNotFoundException;
-import org.lib4j.lang.Resources;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -130,21 +128,16 @@ public class EmbeddedServletContainer implements AutoCloseable {
       return;
     }
 
-    Map<String,String> initParams = null;
-    final WebInitParam[] webInitParams = webServlet.initParams();
-    if (webInitParams != null) {
-      initParams = new HashMap<String,String>();
-      for (final WebInitParam webInitParam : webInitParams)
-        initParams.put(webInitParam.name(), webInitParam.value());
-    }
+    final Map<String,String> initParams = new HashMap<String,String>();
+    for (final WebInitParam webInitParam : webServlet.initParams())
+      initParams.put(webInitParam.name(), webInitParam.value());
 
     final String servletName = webServlet.name().length() > 0 ? webServlet.name() : servletClass.getName();
 
     final ServletSecurity servletSecurity = servletClass.getAnnotation(ServletSecurity.class);
-    HttpConstraint httpConstraint;
-    if (servletSecurity != null && (httpConstraint = servletSecurity.value()) != null && httpConstraint.rolesAllowed().length > 0) {
+    if (servletSecurity != null && servletSecurity.value().rolesAllowed().length > 0) {
       for (final String urlPattern : urlPatterns) {
-        for (final String role : httpConstraint.rolesAllowed()) {
+        for (final String role : servletSecurity.value().rolesAllowed()) {
           final ConstraintMapping constraintMapping = new ConstraintMapping();
           constraintMapping.setConstraint(getBasicAuthConstraint(Constraint.__BASIC_AUTH, role));
           constraintMapping.setPathSpec(urlPattern);
@@ -164,9 +157,7 @@ public class EmbeddedServletContainer implements AutoCloseable {
     for (final String urlPattern : urlPatterns) {
       final ServletHolder servletHolder = new ServletHolder(servlet);
       servletHolder.setName(servletName);
-      if (initParams != null)
-        servletHolder.getRegistration().setInitParameters(initParams);
-
+      servletHolder.getRegistration().setInitParameters(initParams);
       servletHolder.getRegistration().setMultipartConfig(new MultipartConfigElement(""));
       context.addServlet(servletHolder, urlPattern);
     }
@@ -270,7 +261,7 @@ public class EmbeddedServletContainer implements AutoCloseable {
     https.addCustomizer(new SecureRequestCustomizer());
 
     final SslContextFactory sslContextFactory = new SslContextFactory();
-    sslContextFactory.setKeyStorePath(Resources.getResource(keyStorePath).getURL().toExternalForm());
+    sslContextFactory.setKeyStorePath(Thread.currentThread().getContextClassLoader().getResource(keyStorePath).toExternalForm());
     sslContextFactory.setKeyStorePassword(keyStorePassword);
 
     final ServerConnector connector = new ServerConnector(server, new SslConnectionFactory(sslContextFactory, "http/1.1"), new HttpConnectionFactory(https));
