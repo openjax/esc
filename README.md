@@ -59,7 +59,7 @@ Developed with the CohesionFirst™ approach, **libx4j-jetty** is built to make 
   <dependency>
     <groupId>org.libx4j</groupId>
     <artifactId>libx4j-jetty</artifactId>
-    <version>1.1.3-SNAPSHOT</version>
+    <version>1.1.4-SNAPSHOT</version>
   </dependency>
   ```
 
