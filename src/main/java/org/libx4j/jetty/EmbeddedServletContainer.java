@@ -217,24 +217,20 @@ public class EmbeddedServletContainer implements AutoCloseable {
     if (servletClasses == null || filterClasses == null) {
       for (final Package pkg : Package.getPackages()) {
         if (acceptPackage(pkg)) {
-          try {
-            PackageLoader.getSystemContextPackageLoader().loadPackage(pkg, new Predicate<Class<?>>() {
-              @Override
-              public boolean test(final Class<?> t) {
-                if (Modifier.isAbstract(t.getModifiers()))
-                  return false;
-
-                if (servletClasses == null && HttpServlet.class.isAssignableFrom(t))
-                  addServlet(context, (Class<? extends HttpServlet>)t);
-                else if (filterClasses == null && Filter.class.isAssignableFrom(t) && t.isAnnotationPresent(WebFilter.class))
-                  addFilter(context, (Class<? extends Filter>)t);
-
+          PackageLoader.getSystemContextPackageLoader().loadPackage(pkg, new Predicate<Class<?>>() {
+            @Override
+            public boolean test(final Class<?> t) {
+              if (Modifier.isAbstract(t.getModifiers()))
                 return false;
-              }
-            });
-          }
-          catch (final PackageNotFoundException e) {
-          }
+
+              if (servletClasses == null && HttpServlet.class.isAssignableFrom(t))
+                addServlet(context, (Class<? extends HttpServlet>)t);
+              else if (filterClasses == null && Filter.class.isAssignableFrom(t) && t.isAnnotationPresent(WebFilter.class))
+                addFilter(context, (Class<? extends Filter>)t);
+
+              return false;
+            }
+          });
         }
       }
     }
