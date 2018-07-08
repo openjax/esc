@@ -218,7 +218,7 @@ public class EmbeddedServletContainer implements AutoCloseable {
       for (final Package pkg : Package.getPackages()) {
         if (acceptPackage(pkg)) {
           try {
-            PackageLoader.getSystemContextPackageLoader().loadPackage(pkg, new Predicate<Class<?>>() {
+            PackageLoader.getContextPackageLoader().loadPackage(pkg, new Predicate<Class<?>>() {
               @Override
               public boolean test(final Class<?> t) {
                 if (Modifier.isAbstract(t.getModifiers()))
