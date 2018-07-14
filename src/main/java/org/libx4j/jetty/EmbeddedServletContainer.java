@@ -69,8 +69,8 @@ import org.slf4j.LoggerFactory;
 public class EmbeddedServletContainer implements AutoCloseable {
   private static final Logger logger = LoggerFactory.getLogger(EmbeddedServletContainer.class);
 
-  private static final Set<Class<? extends HttpServlet>> addedServletClasses = new HashSet<Class<? extends HttpServlet>>();
-  private static final Set<Class<? extends Filter>> addedFilterClasses = new HashSet<Class<? extends Filter>>();
+  private static final Set<Class<? extends HttpServlet>> addedServletClasses = new HashSet<>();
+  private static final Set<Class<? extends Filter>> addedFilterClasses = new HashSet<>();
   private static final String[] excludeStartsWith = {"jdk", "java", "javax", "com.sun", "sun", "org.w3c", "org.xml", "org.jvnet", "org.joda", "org.jcp", "apple.security"};
 
   private static UncaughtServletExceptionHandler uncaughtServletExceptionHandler;
@@ -83,7 +83,7 @@ public class EmbeddedServletContainer implements AutoCloseable {
     return true;
   }
 
-  private static final Map<String,Map<String,Constraint>> roleToConstraint = new HashMap<String,Map<String,Constraint>>();
+  private static final Map<String,Map<String,Constraint>> roleToConstraint = new HashMap<>();
 
   private static Constraint getConstraint(final Map<String,Constraint> authTypeToConstraint, final String authType, final String role) {
     Constraint constraint = authTypeToConstraint.get(authType);
@@ -98,7 +98,7 @@ public class EmbeddedServletContainer implements AutoCloseable {
   private static Constraint getBasicAuthConstraint(final String authType, final String role) {
     Map<String,Constraint> authTypeToConstraint = roleToConstraint.get(role);
     if (authTypeToConstraint == null)
-      roleToConstraint.put(role, authTypeToConstraint = new HashMap<String,Constraint>());
+      roleToConstraint.put(role, authTypeToConstraint = new HashMap<>());
 
     return getConstraint(authTypeToConstraint, authType, role);
   }
@@ -128,7 +128,7 @@ public class EmbeddedServletContainer implements AutoCloseable {
       return;
     }
 
-    final Map<String,String> initParams = new HashMap<String,String>();
+    final Map<String,String> initParams = new HashMap<>();
     for (final WebInitParam webInitParam : webServlet.initParams())
       initParams.put(webInitParam.name(), webInitParam.value());
 

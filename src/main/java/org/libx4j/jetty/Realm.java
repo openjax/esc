@@ -25,8 +25,8 @@ import java.util.Set;
 public class Realm implements Cloneable, Serializable {
   private static final long serialVersionUID = 5903086620776103606L;
 
-  private final Map<String,String> credentials = new HashMap<String,String>();
-  private final Set<String> roles = new HashSet<String>();
+  private final Map<String,String> credentials = new HashMap<>();
+  private final Set<String> roles = new HashSet<>();
   private final String name;
 
   public Realm(final String name) {
