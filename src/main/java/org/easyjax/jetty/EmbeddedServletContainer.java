@@ -1,4 +1,4 @@
-/* Copyright (c) 2016 lib4j
+/* Copyright (c) 2016 EasyJAX
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -14,7 +14,7 @@
  * program. If not, see <http://opensource.org/licenses/MIT/>.
  */
 
-package org.libx4j.jetty;
+package org.easyjax.jetty;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
