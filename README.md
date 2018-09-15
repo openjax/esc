@@ -1,6 +1,6 @@
-<img src="https://www.cohesionfirst.org/logo.png" align="right">
+<img src="https://images.cooltext.com/5195724.png" align="right">
 
-## easyjax-jetty<br>![java-commons][java-commons] <a href="https://www.cohesionfirst.org/"><img src="https://img.shields.io/badge/CohesionFirst%E2%84%A2--blue.svg"></a>
+## easyjax-jetty<br><a href="https://www.easyjax.org/"><img src="https://img.shields.io/badge/EasyJAX--blue.svg"></a>
 > Commons Embedded Jetty Wrapper
 
 ### Introduction
@@ -9,9 +9,9 @@ This project is a light wrapper of the [Jetty Servlet Container][jetty], which p
 
 ### Why **easyjax-jetty**?
 
-#### CohesionFirst™
+#### CohesionFirst
 
-Developed with the CohesionFirst™ approach, **easyjax-jetty** is built to make a developer's life easier. Made possible by the rigorous conformance to design patterns and best practices in every line of its implementation, **commons-jetty** is simple to use and easy to understand.
+Developed with the CohesionFirst approach, **easyjax-jetty** is built to make a developer's life easier. Made possible by the rigorous conformance to design patterns and best practices in every line of its implementation, **commons-jetty** is simple to use and easy to understand.
 
 #### Cohesive and Simple API for Embedded Servlet Container Initialization
 
@@ -67,10 +67,10 @@ Developed with the CohesionFirst™ approach, **easyjax-jetty** is built to make
 
   ```java
   public class App extends EmbeddedServletContainer {
-    public static void main(final String[] args) {
+    public static void main(String[] args) {
     }
     
-    public App(final int port, final String keyStorePath, final String keyStorePassword, final boolean externalResourcesAccess, final Realm realm, final Class<? extends HttpServlet> ... servletClasses) {
+    public App(int port, String keyStorePath, String keyStorePassword, boolean externalResourcesAccess, Realm realm, Class<? extends HttpServlet> ... servletClasses) {
       super(port, keyStorePath, keyStorePassword, externalResourcesAccess, realm, servletClasses);
     }
   }
@@ -79,8 +79,8 @@ Developed with the CohesionFirst™ approach, **easyjax-jetty** is built to make
 4. Include the server initialization code in `main()`.
 
   ```java
-  public static void main(final String[] args) {
-    final Server server = new Server(8080, null, null, true, null);
+  public static void main(String[] args) {
+    Server server = new Server(8080, null, null, true, null);
     server.start();
     server.join();
   }
@@ -92,7 +92,8 @@ Developed with the CohesionFirst™ approach, **easyjax-jetty** is built to make
 
 This project is licensed under the MIT License - see the [LICENSE.txt](LICENSE.txt) file for details.
 
-[java-commons]: https://img.shields.io/badge/java-easyjax-orange.svg
+<a href="http://cooltext.com" target="_top"><img src="https://cooltext.com/images/ct_pixel.gif" width="80" height="15" alt="Cool Text: Logo and Graphics Generator" border="0" /></a>
+
 [jdk8-download]: http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html
 [jetty]: http://www.eclipse.org/jetty/
 [maven-archetype-quickstart]: http://maven.apache.org/archetypes/maven-archetype-quickstart/
