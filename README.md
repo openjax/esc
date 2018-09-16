@@ -98,4 +98,4 @@ This project is licensed under the MIT License - see the [LICENSE.txt](LICENSE.t
 [jetty]: http://www.eclipse.org/jetty/
 [maven-archetype-quickstart]: http://maven.apache.org/archetypes/maven-archetype-quickstart/
 [maven]: https://maven.apache.org/
-[servlet-v3-spec]: http://download.oracle.com/otn-pub/jcp/servlet-3.0-fr-eval-oth-JSpec/servlet-3_0-final-spec.pdf?AuthParam=1480559853_acb6e03a9239ef531494496d67f2d301
+[servlet-v3-spec]: http://download.oracle.com/otn-pub/jcp/servlet-3.0-fr-eval-oth-JSpec/servlet-3_0-final-spec.pdf
