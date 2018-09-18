@@ -24,7 +24,6 @@
     <artifactId>easyjax</artifactId>
     <version>3.7.5-SNAPSHOT</version>
   </parent>
-  <groupId>org.easyjax</groupId>
   <artifactId>jetty</artifactId>
   <version>9.4.8-SNAPSHOT</version>
   <name>${project.groupId}:${project.artifactId}</name>
