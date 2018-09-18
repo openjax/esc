@@ -1,25 +1,25 @@
 <img src="https://images.cooltext.com/5195724.png" align="right">
 
-## easyjax-jetty<br><a href="https://www.easyjax.org/"><img src="https://img.shields.io/badge/EasyJAX--blue.svg"></a>
+## jetty<br><a href="https://www.easyjax.org/"><img src="https://img.shields.io/badge/EasyJAX--blue.svg"></a>
 > Commons Embedded Jetty Wrapper
 
 ### Introduction
 
 This project is a light wrapper of the [Jetty Servlet Container][jetty], which provides helpful patterns to developers that desire a lightweight embedded server solution.
 
-### Why **easyjax-jetty**?
+### Why **jetty**?
 
 #### CohesionFirst
 
-Developed with the CohesionFirst approach, **easyjax-jetty** is built to make a developer's life easier. Made possible by the rigorous conformance to design patterns and best practices in every line of its implementation, **commons-jetty** is simple to use and easy to understand.
+Developed with the CohesionFirst approach, **jetty** is built to make a developer's life easier. Made possible by the rigorous conformance to design patterns and best practices in every line of its implementation, **commons-jetty** is simple to use and easy to understand.
 
 #### Cohesive and Simple API for Embedded Servlet Container Initialization
 
-**easyjax-jetty** is created to take full advantage of the `javax.servlet.annotation.*` annotations defined in the [Java Servlet v3 Specification of 2009][servlet-v3-spec]. Designed specifically to avoid non-cohesive config files, **commons-jetty** creates a direct and easy to understand embedded wrapper of the Jetty Servlet Container. **commons-jetty** provides a simple API to initialize a Servlet Container in a JVM, significantly reducing the headache most people have when attempting to accomplish the same with Jetty's raw APIs.
+**jetty** is created to take full advantage of the `javax.servlet.annotation.*` annotations defined in the [Java Servlet v3 Specification of 2009][servlet-v3-spec]. Designed specifically to avoid non-cohesive config files, **commons-jetty** creates a direct and easy to understand embedded wrapper of the Jetty Servlet Container. **commons-jetty** provides a simple API to initialize a Servlet Container in a JVM, significantly reducing the headache most people have when attempting to accomplish the same with Jetty's raw APIs.
 
 ### Significantly Reduces Boilerplate Code
 
-**easyjax-jetty** is intended to reduce the number of lines of code dedicated to the initialization of the server, therefore reducing the space of possible errors, and thus allowing the developer to move to his next task, confidently assured the server will start.
+**jetty** is intended to reduce the number of lines of code dedicated to the initialization of the server, therefore reducing the space of possible errors, and thus allowing the developer to move to his next task, confidently assured the server will start.
 
 ### Getting Started
 
@@ -53,12 +53,12 @@ Developed with the CohesionFirst approach, **easyjax-jetty** is built to make a 
   </pluginRepositories>
   ```
   
-3. Next, add the `org.easyjax:easyjax-jetty` dependency to the POM.
+3. Next, add the `org.easyjax:jetty` dependency to the POM.
 
   ```xml
   <dependency>
     <groupId>org.easyjax</groupId>
-    <artifactId>easyjax-jetty</artifactId>
+    <artifactId>jetty</artifactId>
     <version>1.1.4-SNAPSHOT</version>
   </dependency>
   ```
