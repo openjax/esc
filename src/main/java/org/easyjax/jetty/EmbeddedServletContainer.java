@@ -233,7 +233,7 @@ public class EmbeddedServletContainer implements AutoCloseable {
               }
             });
           }
-          catch (final PackageNotFoundException e) {
+          catch (final IOException | PackageNotFoundException e) {
             throw new RuntimeException(e);
           }
         }
