@@ -1,7 +1,6 @@
-<img src="https://images.cooltext.com/5195724.png" align="right">
+# EasyJAX Jetty
 
-## jetty<br><a href="https://www.easyjax.org/"><img src="https://img.shields.io/badge/EasyJAX--blue.svg"></a>
-> Commons Embedded Jetty Wrapper
+**A Convenient Embedded Jetty Pattern**
 
 ### Introduction
 
@@ -87,6 +86,16 @@ Developed with the CohesionFirst approach, **jetty** is built to make a develope
   ```
 
 9. Run `App`.
+
+### JavaDocs
+
+JavaDocs are available [here](https://www.easyjax.org/jetty/javadocs/).
+
+## Contributing
+
+Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
+
+Please make sure to update tests as appropriate.
 
 ### License
 
