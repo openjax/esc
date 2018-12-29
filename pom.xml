@@ -27,9 +27,6 @@
   <artifactId>jetty</artifactId>
   <version>9.4.8-SNAPSHOT</version>
   <name>${project.groupId}:${project.artifactId}</name>
-  <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-  </properties>
   <dependencies>
     <dependency>
       <groupId>org.eclipse.jetty</groupId>
