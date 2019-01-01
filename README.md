@@ -1,4 +1,4 @@
-# EasyJAX Jetty
+# OpenJAX Support Jetty
 
 **A Convenient Embedded Jetty Pattern**
 
@@ -52,17 +52,17 @@ Developed with the CohesionFirst approach, **jetty** is built to make a develope
   </pluginRepositories>
   ```
   
-3. Next, add the `org.easyjax:jetty` dependency to the POM.
+3. Next, add the `org.openjax.support:jetty` dependency to the POM.
 
   ```xml
   <dependency>
-    <groupId>org.easyjax</groupId>
-    <artifactId>jetty</artifactId>
+    <groupId>org.openjax.support</groupId>
+    <artifactId>support-jetty</artifactId>
     <version>1.1.4-SNAPSHOT</version>
   </dependency>
   ```
 
-3. Make `App` extend `org.easyjax.jetty.EmbeddedServletContainer`, and add a constructor.
+3. Make `App` extend `org.openjax.support.jetty.EmbeddedServletContainer`, and add a constructor.
 
   ```java
   public class App extends EmbeddedServletContainer {
@@ -89,7 +89,7 @@ Developed with the CohesionFirst approach, **jetty** is built to make a develope
 
 ### JavaDocs
 
-JavaDocs are available [here](https://www.easyjax.org/jetty/javadocs/).
+JavaDocs are available [here](https://support.openjax.org/jetty/apidocs/).
 
 ## Contributing
 

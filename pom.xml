@@ -1,5 +1,5 @@
 <!--
-  Copyright (c) 2016 EasyJAX
+  Copyright (c) 2016 OpenJAX
   
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to deal
@@ -20,13 +20,21 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
-    <groupId>org.easyjax</groupId>
-    <artifactId>easyjax</artifactId>
+    <groupId>org.openjax.support</groupId>
+    <artifactId>support</artifactId>
     <version>3.7.5-SNAPSHOT</version>
   </parent>
-  <artifactId>jetty</artifactId>
+  <artifactId>support-jetty</artifactId>
   <version>9.4.8-SNAPSHOT</version>
   <name>${project.groupId}:${project.artifactId}</name>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.openjax.classic.xml</groupId>
+        <artifactId>xml-maven-plugin</artifactId>
+      </plugin>
+    </plugins>
+  </build>
   <dependencies>
     <dependency>
       <groupId>org.eclipse.jetty</groupId>
@@ -44,8 +52,8 @@
       <version>9.4.8.v20171121</version>
     </dependency>
     <dependency>
-      <groupId>org.fastjax</groupId>
-      <artifactId>net</artifactId>
+      <groupId>org.openjax.classic</groupId>
+      <artifactId>classic-net</artifactId>
       <version>0.5.0-SNAPSHOT</version>
     </dependency>
   </dependencies>

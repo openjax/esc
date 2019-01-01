@@ -1,4 +1,4 @@
-/* Copyright (c) 2016 EasyJAX
+/* Copyright (c) 2016 OpenJAX
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -14,7 +14,7 @@
  * program. If not, see <http://opensource.org/licenses/MIT/>.
  */
 
-package org.easyjax.jetty;
+package org.openjax.support.jetty;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -61,8 +61,8 @@ import org.eclipse.jetty.util.resource.Resource;
 import org.eclipse.jetty.util.security.Constraint;
 import org.eclipse.jetty.util.security.Credential;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
-import org.fastjax.lang.PackageLoader;
-import org.fastjax.lang.PackageNotFoundException;
+import org.openjax.classic.lang.PackageLoader;
+import org.openjax.classic.lang.PackageNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -294,7 +294,7 @@ public class EmbeddedServletContainer implements AutoCloseable {
         handlers.addHandler(resourceHandler);
       }
       catch (final IOException e) {
-        throw new UnsupportedOperationException(e);
+        throw new IllegalStateException(e);
       }
     }
 
