@@ -1,6 +1,8 @@
 # OpenJAX Support Jetty
 
-**A Convenient Embedded Jetty Pattern**
+> A Convenient Embedded Jetty Pattern
+
+[![Build Status](https://travis-ci.org/openjax/support-jetty.png)](https://travis-ci.org/openjax/support-jetty)
 
 ### Introduction
 
