@@ -3,6 +3,7 @@
 > A Convenient Embedded Jetty Pattern
 
 [![Build Status](https://travis-ci.org/openjax/support-jetty.png)](https://travis-ci.org/openjax/support-jetty)
+[![Coverage Status](https://coveralls.io/repos/github/openjax/support-jetty/badge.svg)](https://coveralls.io/github/openjax/support-jetty)
 
 ### Introduction
 
