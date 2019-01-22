@@ -270,9 +270,13 @@ public class EmbeddedServletContainer implements AutoCloseable {
     return connector;
   }
 
-  private final Server server = new Server();
+  private final Server server;
 
   public EmbeddedServletContainer(final int port, final String keyStorePath, final String keyStorePassword, final boolean externalResourcesAccess, final Realm realm, final Set<Class<? extends HttpServlet>> servletClasses, final Set<Class<? extends Filter>> filterClasses) {
+    if (port < 1 || 65535 < port)
+      throw new IllegalArgumentException("Port (" + port + ") must be between 1 and 65535");
+
+    this.server = new Server();
     final ServletContextHandler context = addAllServlets(realm, servletClasses, filterClasses);
     server.setConnectors(new Connector[] {makeConnector(server, port, keyStorePath, keyStorePassword)});
 
@@ -281,9 +285,9 @@ public class EmbeddedServletContainer implements AutoCloseable {
       handlers.addHandler(handler);
 
     if (externalResourcesAccess) {
-      // FIXME: HACK: Why cannot I just get the "/" resource? In the IDE it works, but in the stand-alone jar, it does not
+      // FIXME: HACK: Why cannot I just get the "/" resource? In the IDE it works, but in the standalone jar, it does not
       try {
-        final String resourceName = getClass().getName().replace('.', '/') + ".class";
+        final String resourceName = getClass().getName().replace('.', '/').concat(".class");
         final String configResourcePath = Thread.currentThread().getContextClassLoader().getResource(resourceName).toExternalForm();
         final URL rootResourceURL = new URL(configResourcePath.substring(0, configResourcePath.length() - resourceName.length()));
 

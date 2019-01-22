@@ -22,7 +22,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-public class Realm implements Cloneable, Serializable {
+public class Realm implements Serializable {
   private static final long serialVersionUID = 5903086620776103606L;
 
   private final Map<String,String> credentials = new HashMap<>();
@@ -31,12 +31,6 @@ public class Realm implements Cloneable, Serializable {
 
   public Realm(final String name) {
     this.name = name;
-  }
-
-  private Realm(final Realm copy) {
-    this.name = copy.name;
-    this.credentials.putAll(copy.credentials);
-    this.roles.addAll(copy.roles);
   }
 
   public String getName() {
@@ -57,11 +51,6 @@ public class Realm implements Cloneable, Serializable {
 
   public Map<String,String> getCredentials() {
     return this.credentials;
-  }
-
-  @Override
-  public Realm clone() {
-    return new Realm(this);
   }
 
   @Override
