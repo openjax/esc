@@ -34,7 +34,7 @@ Developed with the CohesionFirst approach, **jetty** is built to make a develope
 
 1. In your preferred development directory, create a [`maven-archetype-quickstart`][maven-archetype-quickstart] project.
 
-  ```tcsh
+  ```bash
   mvn archetype:generate -DgroupId=com.mycompany.app -DartifactId=my-app -DarchetypeArtifactId=maven-archetype-quickstart -DinteractiveMode=false
   ```
 
