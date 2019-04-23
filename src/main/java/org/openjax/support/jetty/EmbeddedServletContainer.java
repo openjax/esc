@@ -44,16 +44,16 @@ import org.eclipse.jetty.security.SecurityHandler;
 import org.eclipse.jetty.security.UserStore;
 import org.eclipse.jetty.security.authentication.BasicAuthenticator;
 import org.eclipse.jetty.server.Connector;
+import org.eclipse.jetty.server.CustomRequestLog;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.SecureRequestCustomizer;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
-import org.eclipse.jetty.server.Slf4jRequestLog;
+import org.eclipse.jetty.server.Slf4jRequestLogWriter;
 import org.eclipse.jetty.server.SslConnectionFactory;
 import org.eclipse.jetty.server.handler.HandlerCollection;
-import org.eclipse.jetty.server.handler.RequestLogHandler;
 import org.eclipse.jetty.server.handler.ResourceHandler;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
@@ -303,15 +303,13 @@ public class EmbeddedServletContainer implements AutoCloseable {
     }
 
     handlers.addHandler(context);
-
-    final RequestLogHandler requestLogHandler = new RequestLogHandler();
-    requestLogHandler.setServer(server);
-    final Slf4jRequestLog requestLog = new Slf4jRequestLog();
-    requestLog.setPreferProxiedForAddress(true);
-    requestLogHandler.setRequestLog(requestLog);
-    handlers.addHandler(requestLogHandler);
-
     server.setHandler(handlers);
+
+    // Look at the javadoc for CustomRequestLog.
+    // There is no special case handling of "proxiedForAddress", relies on ForwardRequestCustomizer.
+    // For Log Latency, see "%D" formatting option.
+    final CustomRequestLog requestLog = new CustomRequestLog(new Slf4jRequestLogWriter(), CustomRequestLog.EXTENDED_NCSA_FORMAT);
+    server.setRequestLog(requestLog);
   }
 
   public void start() throws Exception {
