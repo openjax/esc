@@ -4,6 +4,8 @@
 
 [![Build Status](https://travis-ci.org/openjax/support-jetty.png)](https://travis-ci.org/openjax/support-jetty)
 [![Coverage Status](https://coveralls.io/repos/github/openjax/support-jetty/badge.svg)](https://coveralls.io/github/openjax/support-jetty)
+[![Javadocs](https://www.javadoc.io/badge/org.openjax.support/jetty.svg)](https://www.javadoc.io/doc/org.openjax.support/jetty)
+[![Released Version](https://img.shields.io/maven-central/v/org.openjax.support/jetty.svg)](https://mvnrepository.com/artifact/org.openjax.support/jetty)
 
 ### Introduction
 
@@ -54,7 +56,7 @@ Developed with the CohesionFirst approach, **jetty** is built to make a develope
     </pluginRepository>
   </pluginRepositories>
   ```
-  
+
 3. Next, add the `org.openjax.support:jetty` dependency to the POM.
 
   ```xml
@@ -71,7 +73,7 @@ Developed with the CohesionFirst approach, **jetty** is built to make a develope
   public class App extends EmbeddedServletContainer {
     public static void main(String[] args) {
     }
-    
+
     public App(int port, String keyStorePath, String keyStorePassword, boolean externalResourcesAccess, Realm realm, Class<? extends HttpServlet> ... servletClasses) {
       super(port, keyStorePath, keyStorePassword, externalResourcesAccess, realm, servletClasses);
     }
@@ -89,10 +91,6 @@ Developed with the CohesionFirst approach, **jetty** is built to make a develope
   ```
 
 9. Run `App`.
-
-### JavaDocs
-
-JavaDocs are available [here](https://support.openjax.org/jetty/apidocs/).
 
 ## Contributing
 
