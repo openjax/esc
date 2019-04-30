@@ -14,7 +14,7 @@
  * program. If not, see <http://opensource.org/licenses/MIT/>.
  */
 
-package org.openjax.support.jetty;
+package org.openjax.std.jetty;
 
 import java.io.Serializable;
 import java.util.HashMap;
