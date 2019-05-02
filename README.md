@@ -1,11 +1,11 @@
-# OpenJAX Extensions Jetty
+# OpenJAX Jetty
 
 > A Convenient Embedded Jetty Pattern
 
-[![Build Status](https://travis-ci.org/openjax/ext-jetty.png)](https://travis-ci.org/openjax/ext-jetty)
-[![Coverage Status](https://coveralls.io/repos/github/openjax/ext-jetty/badge.svg)](https://coveralls.io/github/openjax/ext-jetty)
-[![Javadocs](https://www.javadoc.io/badge/org.openjax.ext/jetty.svg)](https://www.javadoc.io/doc/org.openjax.ext/jetty)
-[![Released Version](https://img.shields.io/maven-central/v/org.openjax.ext/jetty.svg)](https://mvnrepository.com/artifact/org.openjax.ext/jetty)
+[![Build Status](https://travis-ci.org/openjax/jetty.png)](https://travis-ci.org/openjax/jetty)
+[![Coverage Status](https://coveralls.io/repos/github/openjax/jetty/badge.svg)](https://coveralls.io/github/openjax/jetty)
+[![Javadocs](https://www.javadoc.io/badge/org.openjax/jetty.svg)](https://www.javadoc.io/doc/org.openjax/jetty)
+[![Released Version](https://img.shields.io/maven-central/v/org.openjax/jetty.svg)](https://mvnrepository.com/artifact/org.openjax/jetty)
 
 ### Introduction
 
@@ -57,17 +57,17 @@ Developed with the CohesionFirst approach, **jetty** is built to make a develope
   </pluginRepositories>
   ```
 
-3. Next, add the `org.openjax.ext:jetty` dependency to the POM.
+3. Next, add the `org.openjax:jetty` dependency to the POM.
 
   ```xml
   <dependency>
-    <groupId>org.openjax.ext</groupId>
+    <groupId>org.openjax</groupId>
     <artifactId>jetty</artifactId>
     <version>1.1.4-SNAPSHOT</version>
   </dependency>
   ```
 
-3. Make `App` extend `org.openjax.ext.jetty.EmbeddedServletContainer`, and add a constructor.
+3. Make `App` extend `org.openjax.jetty.EmbeddedServletContainer`, and add a constructor.
 
   ```java
   public class App extends EmbeddedServletContainer {

@@ -14,7 +14,7 @@
  * program. If not, see <http://opensource.org/licenses/MIT/>.
  */
 
-package org.openjax.ext.jetty;
+package org.openjax.jetty;
 
 import static org.junit.Assert.*;
 
