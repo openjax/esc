@@ -28,7 +28,7 @@
   <version>9.4.16-SNAPSHOT</version>
   <name>OpenJAX Jetty</name>
   <description>
-    A light wrapper of the Jetty Servlet Container, which provides helpful patterns to developers that desire a lightweight embedded server solution.
+    Embedded wrapper of the "Jetty Servlet Container".
   </description>
   <build>
     <plugins>
