@@ -66,24 +66,37 @@ import org.libj.lang.PackageNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Simple API to initialize a Servlet Container in a JVM, significantly reducing
+ * the headache most people have when attempting to accomplish the same with
+ * Jetty's raw APIs.
+ */
 public class EmbeddedServletContainer implements AutoCloseable {
   private static final Logger logger = LoggerFactory.getLogger(EmbeddedServletContainer.class);
 
   private static final Set<Class<? extends HttpServlet>> addedServletClasses = new HashSet<>();
   private static final Set<Class<? extends Filter>> addedFilterClasses = new HashSet<>();
-  private static final String[] excludeStartsWith = {"jdk", "java", "javax", "com.sun", "sun", "org.w3c", "org.xml", "org.jvnet", "org.joda", "org.jcp", "apple.security"};
+  private static final String[] excludePackageStartsWith = {"jdk", "java", "javax", "com.sun", "sun", "org.w3c", "org.xml", "org.jvnet", "org.joda", "org.jcp", "apple.security"};
 
   private static UncaughtServletExceptionHandler uncaughtServletExceptionHandler;
 
   private static boolean acceptPackage(final Package pkg) {
-    for (int i = 0; i < excludeStartsWith.length; i++)
-      if (pkg.getName().startsWith(excludeStartsWith[i] + "."))
+    for (int i = 0; i < excludePackageStartsWith.length; ++i)
+      if (pkg.getName().startsWith(excludePackageStartsWith[i] + "."))
         return false;
 
     return true;
   }
 
   private static final Map<String,Map<String,Constraint>> roleToConstraint = new HashMap<>();
+
+  private static Constraint getBasicAuthConstraint(final String authType, final String role) {
+    Map<String,Constraint> authTypeToConstraint = roleToConstraint.get(role);
+    if (authTypeToConstraint == null)
+      roleToConstraint.put(role, authTypeToConstraint = new HashMap<>());
+
+    return getConstraint(authTypeToConstraint, authType, role);
+  }
 
   private static Constraint getConstraint(final Map<String,Constraint> authTypeToConstraint, final String authType, final String role) {
     Constraint constraint = authTypeToConstraint.get(authType);
@@ -93,14 +106,6 @@ public class EmbeddedServletContainer implements AutoCloseable {
     authTypeToConstraint.put(authType, constraint = new Constraint(authType, role));
     constraint.setAuthenticate(true);
     return constraint;
-  }
-
-  private static Constraint getBasicAuthConstraint(final String authType, final String role) {
-    Map<String,Constraint> authTypeToConstraint = roleToConstraint.get(role);
-    if (authTypeToConstraint == null)
-      roleToConstraint.put(role, authTypeToConstraint = new HashMap<>());
-
-    return getConstraint(authTypeToConstraint, authType, role);
   }
 
   private static void addServlet(final ServletContextHandler context, final Class<? extends HttpServlet> servletClass) {
@@ -133,7 +138,6 @@ public class EmbeddedServletContainer implements AutoCloseable {
       initParams.put(webInitParam.name(), webInitParam.value());
 
     final String servletName = webServlet.name().length() > 0 ? webServlet.name() : servletClass.getName();
-
     final ServletSecurity servletSecurity = servletClass.getAnnotation(ServletSecurity.class);
     if (servletSecurity != null && servletSecurity.value().rolesAllowed().length > 0) {
       for (final String urlPattern : urlPatterns) {
@@ -182,7 +186,6 @@ public class EmbeddedServletContainer implements AutoCloseable {
 
   private static ServletContextHandler createServletContextHandler(final Realm realm) {
     final ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
-
     if (realm != null) {
       final ConstraintSecurityHandler securityHandler = new ConstraintSecurityHandler();
       final HashLoginService login = new HashLoginService(realm.getName());
@@ -243,10 +246,21 @@ public class EmbeddedServletContainer implements AutoCloseable {
     return context;
   }
 
+  /**
+   * Sets the handler for uncaught servlet exceptions.
+   *
+   * @param uncaughtServletExceptionHandler The
+   *          {@code UncaughtServletExceptionHandler}.
+   */
   public static void setUncaughtServletExceptionHandler(final UncaughtServletExceptionHandler uncaughtServletExceptionHandler) {
+    // FIXME: Make the UncaughtServletExceptionHandler instance a member of the
+    // FIXME: EmbeddedServletContainer.
     EmbeddedServletContainer.uncaughtServletExceptionHandler = uncaughtServletExceptionHandler;
   }
 
+  /**
+   * @return The handler for uncaught servlet exceptions.
+   */
   protected static UncaughtServletExceptionHandler getUncaughtServletExceptionHandler() {
     return EmbeddedServletContainer.uncaughtServletExceptionHandler;
   }
@@ -272,6 +286,59 @@ public class EmbeddedServletContainer implements AutoCloseable {
 
   private final Server server;
 
+  /**
+   * Creates a new {@code EmbeddedServletContainer} with the specified port. The
+   * {@code EmbeddedServletContainer} will scan all classes of the context class
+   * loader to automatically locate servlet and filter classes.
+   *
+   * @param port The listen port, which must be between 1 and 65535.
+   * @throws IllegalArgumentException If port is not between 1 and 65535.
+   */
+  public EmbeddedServletContainer(final int port) {
+    this(port, null, null, false, null, null, null);
+  }
+
+  /**
+   * Creates a new {@code EmbeddedServletContainer} with the specified port, and
+   * servlet and filter classes to be registered with Jetty's web context.
+   * <p>
+   * If {@code servletClasses} and {@code filterClasses} are both set to
+   * {@code null}, the {@code EmbeddedServletContainer} will scan all classes of
+   * the context class loader to automatically locate servlet and filter
+   * classes.
+   *
+   * @param port The listen port, which must be between 1 and 65535.
+   * @param servletClasses Set of servlet classes to be registered with Jetty's
+   *          web context.
+   * @param filterClasses Set of filter classes to be registered with Jetty's
+   *          web context.
+   * @throws IllegalArgumentException If port is not between 1 and 65535.
+   */
+  public EmbeddedServletContainer(final int port, final Set<Class<? extends HttpServlet>> servletClasses, final Set<Class<? extends Filter>> filterClasses) {
+    this(port, null, null, false, null, null, null);
+  }
+
+  /**
+   * Creates a new {@code EmbeddedServletContainer} with the specified port, and
+   * servlet and filter classes to be registered with Jetty's web context.
+   * <p>
+   * If {@code servletClasses} and {@code filterClasses} are both set to
+   * {@code null}, the {@code EmbeddedServletContainer} will scan all classes of
+   * the context class loader to automatically locate servlet and filter
+   * classes.
+   *
+   * @param port The listen port, which must be between 1 and 65535.
+   * @param keyStorePath The path of the SSL keystore.
+   * @param keyStorePassword The password for the key store.
+   * @param externalResourcesAccess Whether the server should provide directory
+   *          listings for its resources.
+   * @param realm The realm of roles and credentials.
+   * @param servletClasses Set of servlet classes to be registered with Jetty's
+   *          web context.
+   * @param filterClasses Set of filter classes to be registered with Jetty's
+   *          web context.
+   * @throws IllegalArgumentException If port is not between 1 and 65535.
+   */
   public EmbeddedServletContainer(final int port, final String keyStorePath, final String keyStorePassword, final boolean externalResourcesAccess, final Realm realm, final Set<Class<? extends HttpServlet>> servletClasses, final Set<Class<? extends Filter>> filterClasses) {
     if (port < 1 || 65535 < port)
       throw new IllegalArgumentException("Port (" + port + ") must be between 1 and 65535");
@@ -312,15 +379,33 @@ public class EmbeddedServletContainer implements AutoCloseable {
     server.setRequestLog(requestLog);
   }
 
+  /**
+   * Starts the container.
+   *
+   * @throws Exception If a component fails to start.
+   */
   public void start() throws Exception {
     server.start();
   }
 
+  /**
+   * Stops the container. The container may wait for current activities to
+   * complete normally, but it can be interrupted.
+   * <p>
+   * {@inheritDoc}
+   *
+   * @throws Exception If a component fails to stop.
+   */
   @Override
   public void close() throws Exception {
     server.stop();
   }
 
+  /**
+   * Blocks until the thread of the server is stopped.
+   *
+   * @throws InterruptedException If thread was interrupted.
+   */
   public void join() throws InterruptedException {
     server.join();
   }

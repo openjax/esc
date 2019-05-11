@@ -19,6 +19,17 @@ package org.openjax.jetty;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 
+/**
+ * Handler for uncaught servlet exceptions.
+ */
 public interface UncaughtServletExceptionHandler {
+  /**
+   * Called by the servlet container in the event of an uncaught servlet
+   * exception.
+   *
+   * @param request The {@code ServletRequest} associated with the exception.
+   * @param response The {@code ServletResponse} associated with the exception.
+   * @param e The exception.
+   */
   void uncaughtServletException(ServletRequest request, ServletResponse response, Exception e);
 }
