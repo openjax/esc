@@ -7,26 +7,26 @@
 [![Javadocs](https://www.javadoc.io/badge/org.openjax/jetty.svg)](https://www.javadoc.io/doc/org.openjax/jetty)
 [![Released Version](https://img.shields.io/maven-central/v/org.openjax/jetty.svg)](https://mvnrepository.com/artifact/org.openjax/jetty)
 
-### Introduction
+## Introduction
 
 OpenJAX Jetty is a conveneince wrapper of the [Jetty Servlet Container][jetty], which provides helpful patterns to developers that desire a lightweight embedded server solution.
 
-#### Simple API for Embedded Servlet Container Initialization
+### Simple API for Embedded Servlet Container Initialization
 
 OpenJAX Jetty is created to take full advantage of the `javax.servlet.annotation.*` annotations defined in the [Java Servlet v3 Specification of 2009][servlet-v3-spec]. Designed specifically to avoid non-cohesive config files, OpenJAX Jetty creates a direct and easy to understand embedded wrapper of the Jetty Servlet Container. OpenJAX Jetty provides a simple API to initialize a Servlet Container in a JVM, significantly reducing the headache most people have when attempting to accomplish the same with Jetty's raw APIs.
 
-### Significantly Reduces Boilerplate Code
+## Significantly Reduces Boilerplate Code
 
 OpenJAX Jetty is intended to reduce the number of lines of code dedicated to the initialization of the server, therefore reducing the space of possible errors, and thus allowing the developer to move to his next task, confidently assured the server will start.
 
-### Getting Started
+## Getting Started
 
-#### Prerequisites
+### Prerequisites
 
 * [Java 8][jdk8-download] - The minimum required JDK version.
 * [Maven][maven] - The dependency management system.
 
-#### Example
+### Example
 
 1. In your preferred development directory, create a [`maven-archetype-quickstart`][maven-archetype-quickstart] project.
 
@@ -72,7 +72,7 @@ Pull requests are welcome. For major changes, please open an issue first to disc
 
 Please make sure to update tests as appropriate.
 
-### License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE.txt](LICENSE.txt) file for details.
 
