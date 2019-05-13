@@ -1,7 +1,5 @@
 # OpenJAX Jetty
 
-> A Convenient Embedded Jetty Pattern
-
 [![Build Status](https://travis-ci.org/openjax/jetty.png)](https://travis-ci.org/openjax/jetty)
 [![Coverage Status](https://coveralls.io/repos/github/openjax/jetty/badge.svg)](https://coveralls.io/github/openjax/jetty)
 [![Javadocs](https://www.javadoc.io/badge/org.openjax/jetty.svg)](https://www.javadoc.io/doc/org.openjax/jetty)
@@ -30,33 +28,33 @@ OpenJAX Jetty is intended to reduce the number of lines of code dedicated to the
 
 1. Next, add the `org.openjax:jetty` dependency to the POM.
 
-  ```xml
-  <dependency>
-    <groupId>org.openjax</groupId>
-    <artifactId>jetty</artifactId>
-    <version>1.1.4</version>
-  </dependency>
-  ```
+   ```xml
+   <dependency>
+     <groupId>org.openjax</groupId>
+     <artifactId>jetty</artifactId>
+     <version>9.4.16</version>
+   </dependency>
+   ```
 
 1. Make `App` extend `org.openjax.jetty.EmbeddedServletContainer`, and add a constructor.
 
-  ```java
-  public class Server extends EmbeddedServletContainer {
-    public Server(int port) {
-      super(port);
-    }
-  }
-  ```
+   ```java
+   public class Server extends EmbeddedServletContainer {
+     public Server(int port) {
+       super(port);
+     }
+   }
+   ```
 
 1. Add the server initialization code in `Server#main()`.
 
-  ```java
-  public static void main(String[] args) {
-    Server server = new Server(8080);
-    server.start();
-    server.join();
-  }
-  ```
+   ```java
+   public static void main(String[] args) {
+     Server server = new Server(8080);
+     server.start();
+     server.join();
+   }
+   ```
 
 1. Run `App`.
 
