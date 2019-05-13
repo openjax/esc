@@ -28,12 +28,6 @@ OpenJAX Jetty is intended to reduce the number of lines of code dedicated to the
 
 ### Example
 
-1. In your preferred development directory, create a [`maven-archetype-quickstart`][maven-archetype-quickstart] project.
-
-  ```bash
-  mvn archetype:generate -DgroupId=com.mycompany.app -DartifactId=my-app -DarchetypeArtifactId=maven-archetype-quickstart -DinteractiveMode=false
-  ```
-
 1. Next, add the `org.openjax:jetty` dependency to the POM.
 
   ```xml
@@ -68,7 +62,7 @@ OpenJAX Jetty is intended to reduce the number of lines of code dedicated to the
 
 ## Contributing
 
-Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
+Pull requests are welcome. For major changes, please [open an issue](../../issues) first to discuss what you would like to change.
 
 Please make sure to update tests as appropriate.
 
