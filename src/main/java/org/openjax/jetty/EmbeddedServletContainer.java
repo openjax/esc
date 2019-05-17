@@ -63,6 +63,7 @@ import org.eclipse.jetty.util.security.Credential;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.libj.lang.PackageLoader;
 import org.libj.lang.PackageNotFoundException;
+import org.libj.net.URLs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -353,20 +354,15 @@ public class EmbeddedServletContainer implements AutoCloseable {
 
     if (externalResourcesAccess) {
       // FIXME: HACK: Why cannot I just get the "/" resource? In the IDE it works, but in the standalone jar, it does not
-      try {
-        final String resourceName = getClass().getName().replace('.', '/').concat(".class");
-        final String configResourcePath = Thread.currentThread().getContextClassLoader().getResource(resourceName).toExternalForm();
-        final URL rootResourceURL = new URL(configResourcePath.substring(0, configResourcePath.length() - resourceName.length()));
+      final String resourceName = getClass().getName().replace('.', '/').concat(".class");
+      final String configResourcePath = Thread.currentThread().getContextClassLoader().getResource(resourceName).toExternalForm();
+      final URL rootResourceURL = URLs.create(configResourcePath.substring(0, configResourcePath.length() - resourceName.length()));
 
-        final ResourceHandler resourceHandler = new ResourceHandler();
-        resourceHandler.setDirectoriesListed(true);
-        resourceHandler.setBaseResource(Resource.newResource(rootResourceURL));
+      final ResourceHandler resourceHandler = new ResourceHandler();
+      resourceHandler.setDirectoriesListed(true);
+      resourceHandler.setBaseResource(Resource.newResource(rootResourceURL));
 
-        handlers.addHandler(resourceHandler);
-      }
-      catch (final IOException e) {
-        throw new IllegalStateException(e);
-      }
+      handlers.addHandler(resourceHandler);
     }
 
     handlers.addHandler(context);
