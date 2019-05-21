@@ -1,4 +1,4 @@
-# OpenJAX Jetty
+# Jetty
 
 [![Build Status](https://travis-ci.org/openjax/jetty.png)](https://travis-ci.org/openjax/jetty)
 [![Coverage Status](https://coveralls.io/repos/github/openjax/jetty/badge.svg)](https://coveralls.io/github/openjax/jetty)
