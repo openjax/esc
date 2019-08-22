@@ -93,6 +93,11 @@ public class Realm implements Cloneable, Serializable {
   }
 
   @Override
+  public Realm clone() {
+    return new Realm(this);
+  }
+
+  @Override
   public boolean equals(final Object obj) {
     if (this == obj)
       return true;
@@ -111,10 +116,5 @@ public class Realm implements Cloneable, Serializable {
     hashCode ^= 31 * roles.hashCode();
     hashCode ^= 31 * name.hashCode();
     return hashCode;
-  }
-
-  @Override
-  protected Realm clone() {
-    return new Realm(this);
   }
 }

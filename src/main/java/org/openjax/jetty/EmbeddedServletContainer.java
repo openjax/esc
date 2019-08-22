@@ -26,7 +26,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Predicate;
 
 import javax.servlet.DispatcherType;
 import javax.servlet.Filter;
@@ -222,19 +221,16 @@ public class EmbeddedServletContainer implements AutoCloseable {
       for (final Package pkg : Package.getPackages()) {
         if (acceptPackage(pkg)) {
           try {
-            PackageLoader.getContextPackageLoader().loadPackage(pkg, new Predicate<Class<?>>() {
-              @Override
-              public boolean test(final Class<?> t) {
-                if (Modifier.isAbstract(t.getModifiers()))
-                  return false;
-
-                if (servletClasses == null && HttpServlet.class.isAssignableFrom(t))
-                  addServlet(context, (Class<? extends HttpServlet>)t);
-                else if (filterClasses == null && Filter.class.isAssignableFrom(t) && t.isAnnotationPresent(WebFilter.class))
-                  addFilter(context, (Class<? extends Filter>)t);
-
+            PackageLoader.getContextPackageLoader().loadPackage(pkg, t -> {
+              if (Modifier.isAbstract(t.getModifiers()))
                 return false;
-              }
+
+              if (servletClasses == null && HttpServlet.class.isAssignableFrom(t))
+                addServlet(context, (Class<? extends HttpServlet>)t);
+              else if (filterClasses == null && Filter.class.isAssignableFrom(t) && t.isAnnotationPresent(WebFilter.class))
+                addFilter(context, (Class<? extends Filter>)t);
+
+              return false;
             });
           }
           catch (final IOException | PackageNotFoundException e) {
