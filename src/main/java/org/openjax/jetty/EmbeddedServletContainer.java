@@ -47,6 +47,7 @@ import org.eclipse.jetty.server.CustomRequestLog;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
+import org.eclipse.jetty.server.NetworkConnector;
 import org.eclipse.jetty.server.SecureRequestCustomizer;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
@@ -262,7 +263,7 @@ public class EmbeddedServletContainer implements AutoCloseable {
     return EmbeddedServletContainer.uncaughtServletExceptionHandler;
   }
 
-  private static Connector makeConnector(final Server server, final int port, final String keyStorePath, final String keyStorePassword) {
+  private static ServerConnector makeConnector(final Server server, final int port, final String keyStorePath, final String keyStorePassword) {
     if (keyStorePath == null || keyStorePassword == null) {
       final ServerConnector connector = new ServerConnector(server);
       connector.setPort(port);
@@ -334,11 +335,11 @@ public class EmbeddedServletContainer implements AutoCloseable {
    *          web context.
    * @param filterClasses Set of filter classes to be registered with Jetty's
    *          web context.
-   * @throws IllegalArgumentException If port is not between 1 and 65535.
+   * @throws IllegalArgumentException If port is not between 0 and 65535.
    */
   public EmbeddedServletContainer(final int port, final String keyStorePath, final String keyStorePassword, final boolean externalResourcesAccess, final Realm realm, final Set<Class<? extends HttpServlet>> servletClasses, final Set<Class<? extends Filter>> filterClasses) {
-    if (port < 1 || 65535 < port)
-      throw new IllegalArgumentException("Port (" + port + ") must be between 1 and 65535");
+    if (port < 0 || 65535 < port)
+      throw new IllegalArgumentException("Port (" + port + ") must be between 0 and 65535");
 
     this.server = new Server();
     final ServletContextHandler context = addAllServlets(realm, servletClasses, filterClasses);
@@ -400,5 +401,15 @@ public class EmbeddedServletContainer implements AutoCloseable {
    */
   public void join() throws InterruptedException {
     server.join();
+  }
+
+  private int port = 0;
+
+  public int getPort() {
+    if (port > 0)
+      return port;
+
+    final NetworkConnector networkConnector = (NetworkConnector)server.getConnectors()[0];
+    return port = networkConnector.getLocalPort();
   }
 }
