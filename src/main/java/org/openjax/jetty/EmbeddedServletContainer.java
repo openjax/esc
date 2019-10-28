@@ -282,6 +282,98 @@ public class EmbeddedServletContainer implements AutoCloseable {
     return connector;
   }
 
+  public static class Builder {
+    private int port;
+
+    /**
+     * @param port The listen port, which must be between 0 and 65535. A value
+     *          of 0 advises Jetty to set a random port that is available. The
+     *          port can thereafter be determined with {@link #getPort()}.
+     * @return The builder instance.
+     * @throws IllegalArgumentException If port is not between 0 and 65535.
+     */
+    public Builder withPort(final int port) {
+      if (port < 0 || 65535 < port)
+        throw new IllegalArgumentException("Port (" + port + ") must be between 0 and 65535");
+
+      this.port = port;
+      return this;
+    }
+
+    private Set<Class<? extends HttpServlet>> servletClasses;
+
+    /**
+     * @param servletClasses Set of servlet classes to be registered with
+     *          Jetty's web context. If the specified set is {@code null}, the
+     *          {@code EmbeddedServletContainer} will scan candidate packages
+     *          for {@link HttpServlet} classes to load automatically.
+     * @return The builder instance.
+     */
+    public Builder withServletClasses(final Set<Class<? extends HttpServlet>> servletClasses) {
+      this.servletClasses = servletClasses;
+      return this;
+    }
+
+    private Set<Class<? extends Filter>> filterClasses;
+
+    /**
+     * @param filterClasses Set of filter classes to be registered with Jetty's
+     *          web context. If the specified set is {@code null}, the
+     *          {@code EmbeddedServletContainer} will scan candidate packages
+     *          for {@link Filter} classes to load automatically.
+     * @return The builder instance.
+     */
+    public Builder withFilterClasses(final Set<Class<? extends Filter>> filterClasses) {
+      this.filterClasses = filterClasses;
+      return this;
+    }
+
+    private Realm realm;
+
+    /**
+     * @param realm The realm of roles and credentials.
+     * @return The builder instance.
+     */
+    public Builder withRealm(final Realm realm) {
+      this.realm = realm;
+      return this;
+    }
+
+    private boolean externalResourcesAccess;
+
+    /**
+     * @param externalResourcesAccess Whether the server should provide
+     *          directory listings for its resources.
+     * @return The builder instance.
+     */
+    public Builder withExternalResourcesAccess(final boolean externalResourcesAccess) {
+      this.externalResourcesAccess = externalResourcesAccess;
+      return this;
+    }
+
+    private String keyStorePath;
+    private String keyStorePassword;
+
+    /**
+     * @param keyStorePath The path of the SSL keystore.
+     * @param keyStorePassword The password for the key store.
+     * @return The builder instance.
+     */
+    public Builder withKeyStore(final String keyStorePath, final String keyStorePassword) {
+      this.keyStorePath = keyStorePath;
+      this.keyStorePassword = keyStorePassword;
+      return this;
+    }
+
+    /**
+     * @return A new {@code EmbeddedServletContainer} with the configuration in
+     *         this builder instance.
+     */
+    public EmbeddedServletContainer build() {
+      return new EmbeddedServletContainer(port, keyStorePath, keyStorePassword, externalResourcesAccess, realm, servletClasses, filterClasses);
+    }
+  }
+
   private final Server server;
 
   /**
@@ -289,8 +381,10 @@ public class EmbeddedServletContainer implements AutoCloseable {
    * {@code EmbeddedServletContainer} will scan all classes of the context class
    * loader to automatically locate servlet and filter classes.
    *
-   * @param port The listen port, which must be between 1 and 65535.
-   * @throws IllegalArgumentException If port is not between 1 and 65535.
+   * @param port The listen port, which must be between 0 and 65535. A value of
+   *          0 advises Jetty to set a random port that is available. The port
+   *          can thereafter be determined with {@link #getPort()}.
+   * @throws IllegalArgumentException If port is not between 0 and 65535.
    */
   public EmbeddedServletContainer(final int port) {
     this(port, null, null, false, null, null, null);
@@ -305,12 +399,18 @@ public class EmbeddedServletContainer implements AutoCloseable {
    * the context class loader to automatically locate servlet and filter
    * classes.
    *
-   * @param port The listen port, which must be between 1 and 65535.
+   * @param port The listen port, which must be between 0 and 65535. A value of
+   *          0 advises Jetty to set a random port that is available. The port
+   *          can thereafter be determined with {@link #getPort()}.
    * @param servletClasses Set of servlet classes to be registered with Jetty's
-   *          web context.
+   *          web context. If the specified set is {@code null}, the
+   *          {@code EmbeddedServletContainer} will scan candidate packages for
+   *          {@link HttpServlet} classes to load automatically.
    * @param filterClasses Set of filter classes to be registered with Jetty's
-   *          web context.
-   * @throws IllegalArgumentException If port is not between 1 and 65535.
+   *          web context. If the specified set is {@code null}, the
+   *          {@code EmbeddedServletContainer} will scan candidate packages for
+   *          {@link Filter} classes to load automatically.
+   * @throws IllegalArgumentException If port is not between 0 and 65535.
    */
   public EmbeddedServletContainer(final int port, final Set<Class<? extends HttpServlet>> servletClasses, final Set<Class<? extends Filter>> filterClasses) {
     this(port, null, null, false, null, null, null);
@@ -325,16 +425,22 @@ public class EmbeddedServletContainer implements AutoCloseable {
    * the context class loader to automatically locate servlet and filter
    * classes.
    *
-   * @param port The listen port, which must be between 1 and 65535.
+   * @param port The listen port, which must be between 0 and 65535. A value of
+   *          0 advises Jetty to set a random port that is available. The port
+   *          can thereafter be determined with {@link #getPort()}.
    * @param keyStorePath The path of the SSL keystore.
    * @param keyStorePassword The password for the key store.
    * @param externalResourcesAccess Whether the server should provide directory
    *          listings for its resources.
    * @param realm The realm of roles and credentials.
    * @param servletClasses Set of servlet classes to be registered with Jetty's
-   *          web context.
+   *          web context. If the specified set is {@code null}, the
+   *          {@code EmbeddedServletContainer} will scan candidate packages for
+   *          {@link HttpServlet} classes to load automatically.
    * @param filterClasses Set of filter classes to be registered with Jetty's
-   *          web context.
+   *          web context. If the specified set is {@code null}, the
+   *          {@code EmbeddedServletContainer} will scan candidate packages for
+   *          {@link Filter} classes to load automatically.
    * @throws IllegalArgumentException If port is not between 0 and 65535.
    */
   public EmbeddedServletContainer(final int port, final String keyStorePath, final String keyStorePassword, final boolean externalResourcesAccess, final Realm realm, final Set<Class<? extends HttpServlet>> servletClasses, final Set<Class<? extends Filter>> filterClasses) {
@@ -405,6 +511,10 @@ public class EmbeddedServletContainer implements AutoCloseable {
 
   private int port = 0;
 
+  /**
+   * @return The actual port the connector is listening on, or -1 if it has not
+   *         been opened, or -2 if it has been closed.
+   */
   public int getPort() {
     if (port > 0)
       return port;

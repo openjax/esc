@@ -22,8 +22,16 @@ import org.junit.Test;
 
 public class EmbeddedServletContainerTest {
   @Test
-  public void test() throws Exception {
-    try (final EmbeddedServletContainer container = new EmbeddedServletContainer(0, null, null, false, null, null, null)) {
+  public void testExceptions() throws Exception {
+    try (final EmbeddedServletContainer container = new EmbeddedServletContainer(-1)) {
+      fail("Expected IllegalArgumentException");
+    }
+    catch (final IllegalArgumentException e) {
+    }
+
+    try {
+      final EmbeddedServletContainer.Builder builder = new EmbeddedServletContainer.Builder();
+      builder.withPort(-1);
       fail("Expected IllegalArgumentException");
     }
     catch (final IllegalArgumentException e) {
