@@ -55,6 +55,7 @@ import org.eclipse.jetty.server.Slf4jRequestLogWriter;
 import org.eclipse.jetty.server.SslConnectionFactory;
 import org.eclipse.jetty.server.handler.HandlerCollection;
 import org.eclipse.jetty.server.handler.ResourceHandler;
+import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.resource.Resource;
@@ -109,9 +110,16 @@ public class EmbeddedServletContainer implements AutoCloseable {
     return constraint;
   }
 
-  private static void addServlet(final ServletContextHandler context, final Class<? extends HttpServlet> servletClass) {
-    if (addedServletClasses.contains(servletClass))
+  private static void addServlet(final ServletContextHandler context, Class<? extends HttpServlet> servletClass, HttpServlet servletInstance) {
+    if (servletClass == null ? servletInstance == null : servletInstance != null)
+      throw new IllegalArgumentException("servletClass XOR servletInstance MUST BE not null");
+
+    if (servletClass == null)
+      servletClass = servletInstance.getClass();
+    else if (addedServletClasses.contains(servletClass))
       return;
+    else
+      addedServletClasses.add(servletClass);
 
     final WebServlet webServlet = servletClass.getAnnotation(WebServlet.class);
     if (webServlet == null) {
@@ -119,13 +127,14 @@ public class EmbeddedServletContainer implements AutoCloseable {
       return;
     }
 
-    final HttpServlet servlet;
-    try {
-      servlet = servletClass.getDeclaredConstructor().newInstance();
-    }
-    catch (final IllegalAccessException | InstantiationException | InvocationTargetException | NoSuchMethodException e) {
-      logger.warn(e.getMessage());
-      return;
+    if (servletInstance == null) {
+      try {
+        servletInstance = servletClass.getDeclaredConstructor().newInstance();
+      }
+      catch (final IllegalAccessException | InstantiationException | InvocationTargetException | NoSuchMethodException e) {
+        logger.warn(e.getMessage());
+        return;
+      }
     }
 
     final String[] urlPatterns = webServlet.value().length != 0 ? webServlet.value() : webServlet.urlPatterns();
@@ -158,9 +167,8 @@ public class EmbeddedServletContainer implements AutoCloseable {
     }
 
     logger.info(servletClass.getName() + " " + Arrays.toString(urlPatterns));
-    addedServletClasses.add(servletClass);
     for (final String urlPattern : urlPatterns) {
-      final ServletHolder servletHolder = new ServletHolder(servlet);
+      final ServletHolder servletHolder = new ServletHolder(servletInstance);
       servletHolder.setName(servletName);
       servletHolder.getRegistration().setInitParameters(initParams);
       servletHolder.getRegistration().setMultipartConfig(new MultipartConfigElement(""));
@@ -168,9 +176,16 @@ public class EmbeddedServletContainer implements AutoCloseable {
     }
   }
 
-  private static void addFilter(final ServletContextHandler context, final Class<? extends Filter> filterClass) {
-    if (addedFilterClasses.contains(filterClass))
+  private static void addFilter(final ServletContextHandler context, Class<? extends Filter> filterClass, Filter filterInstance) {
+    if (filterClass == null ? filterInstance == null : filterInstance != null)
+      throw new IllegalArgumentException("filterClass XOR filterInstance MUST BE not null");
+
+    if (filterClass == null)
+      filterClass = filterInstance.getClass();
+    else if (addedFilterClasses.contains(filterClass))
       return;
+    else
+      addedFilterClasses.add(filterClass);
 
     final WebFilter webFilter = filterClass.getAnnotation(WebFilter.class);
     if (webFilter == null) {
@@ -178,10 +193,24 @@ public class EmbeddedServletContainer implements AutoCloseable {
       return;
     }
 
+    // FIXME: Is it supposed to be EnumSet.noneOf(DispatcherType.class)??? in the addFilter call
     logger.info(filterClass.getName() + " " + Arrays.toString(webFilter.urlPatterns()));
-    addedFilterClasses.add(filterClass);
-    for (final String urlPattern : webFilter.urlPatterns()) {
-      context.addFilter(filterClass, urlPattern, webFilter.dispatcherTypes().length > 0 ? EnumSet.of(webFilter.dispatcherTypes()[0], webFilter.dispatcherTypes()) : EnumSet.noneOf(DispatcherType.class));
+    if (filterInstance != null) {
+      final Map<String,String> initParams = new HashMap<>();
+      for (final WebInitParam webInitParam : webFilter.initParams())
+        initParams.put(webInitParam.name(), webInitParam.value());
+
+      final FilterHolder filterHolder = new FilterHolder(filterInstance);
+      filterHolder.setName(webFilter.filterName().length() > 0 ? webFilter.filterName() : filterClass.getName());
+      filterHolder.getRegistration().setInitParameters(initParams);
+      for (final String urlPattern : webFilter.urlPatterns()) {
+        context.addFilter(filterHolder, urlPattern, webFilter.dispatcherTypes().length > 0 ? EnumSet.of(webFilter.dispatcherTypes()[0], webFilter.dispatcherTypes()) : EnumSet.noneOf(DispatcherType.class));
+      }
+    }
+    else {
+      for (final String urlPattern : webFilter.urlPatterns()) {
+        context.addFilter(filterClass, urlPattern, webFilter.dispatcherTypes().length > 0 ? EnumSet.of(webFilter.dispatcherTypes()[0], webFilter.dispatcherTypes()) : EnumSet.noneOf(DispatcherType.class));
+      }
     }
   }
 
@@ -206,19 +235,29 @@ public class EmbeddedServletContainer implements AutoCloseable {
   }
 
   @SuppressWarnings("unchecked")
-  private static ServletContextHandler addAllServlets(final Realm realm, final Set<Class<? extends HttpServlet>> servletClasses, final Set<Class<? extends Filter>> filterClasses) {
+  private static ServletContextHandler addAllServlets(final Realm realm, final Set<Class<? extends HttpServlet>> servletClasses, final Set<HttpServlet> servletInstances, final Set<Class<? extends Filter>> filterClasses, final Set<Filter> filterInstances) {
     final ServletContextHandler context = createServletContextHandler(realm);
     if (servletClasses != null)
       for (final Class<? extends HttpServlet> servletClass : servletClasses)
-        addServlet(context, servletClass);
+        addServlet(context, servletClass, null);
+
+    if (servletInstances != null)
+      for (final HttpServlet servletInstance : servletInstances)
+        addServlet(context, null, servletInstance);
 
     // FIXME: Without the UncaughtServletExceptionFilter, errors would lead to: net::ERR_INCOMPLETE_CHUNKED_ENCODING
-    addFilter(context, UncaughtServletExceptionFilter.class);
+    addFilter(context, UncaughtServletExceptionFilter.class, null);
     if (filterClasses != null)
       for (final Class<? extends Filter> filterClass : filterClasses)
-        addFilter(context, filterClass);
+        addFilter(context, filterClass, null);
 
-    if (servletClasses == null || filterClasses == null) {
+    if (filterInstances != null)
+      for (final Filter filterInstance : filterInstances)
+        addFilter(context, null, filterInstance);
+
+    final boolean scanServlets = servletClasses == null && servletInstances == null;
+    final boolean scanFilters = filterClasses == null && filterInstances == null;
+    if (scanServlets || scanFilters) {
       for (final Package pkg : Package.getPackages()) {
         if (acceptPackage(pkg)) {
           try {
@@ -226,10 +265,10 @@ public class EmbeddedServletContainer implements AutoCloseable {
               if (Modifier.isAbstract(t.getModifiers()))
                 return false;
 
-              if (servletClasses == null && HttpServlet.class.isAssignableFrom(t))
-                addServlet(context, (Class<? extends HttpServlet>)t);
-              else if (filterClasses == null && Filter.class.isAssignableFrom(t) && t.isAnnotationPresent(WebFilter.class))
-                addFilter(context, (Class<? extends Filter>)t);
+              if (scanServlets && HttpServlet.class.isAssignableFrom(t))
+                addServlet(context, (Class<? extends HttpServlet>)t, null);
+              else if (scanFilters && Filter.class.isAssignableFrom(t) && t.isAnnotationPresent(WebFilter.class))
+                addFilter(context, (Class<? extends Filter>)t, null);
 
               return false;
             });
@@ -304,7 +343,8 @@ public class EmbeddedServletContainer implements AutoCloseable {
 
     /**
      * @param servletClasses Set of servlet classes to be registered with
-     *          Jetty's web context. If the specified set is {@code null}, the
+     *          Jetty's web context. If the specified set is null, and the
+     *          {@code servletInstances} set is null, the
      *          {@code EmbeddedServletContainer} will scan candidate packages
      *          for {@link HttpServlet} classes to load automatically.
      * @return The builder instance.
@@ -314,17 +354,134 @@ public class EmbeddedServletContainer implements AutoCloseable {
       return this;
     }
 
+    /**
+     * @param servletClasses Array of servlet classes to be registered with
+     *          Jetty's web context. If the specified array is null, and the
+     *          {@code servletInstances} set is null, the
+     *          {@code EmbeddedServletContainer} will scan candidate packages
+     *          for {@link HttpServlet} classes to load automatically.
+     * @return The builder instance.
+     */
+    @SafeVarargs
+    public final Builder withServletClasses(final Class<? extends HttpServlet> ... servletClasses) {
+      if (servletClasses != null) {
+        this.servletClasses = new HashSet<>(servletClasses.length);
+        for (final Class<? extends HttpServlet> servletClass : servletClasses)
+          this.servletClasses.add(servletClass);
+      }
+      else {
+        this.servletClasses = null;
+      }
+
+      return this;
+    }
+
+    private Set<HttpServlet> servletInstances;
+
+    /**
+     * @param servletInstances Set of servlet instances to be registered with
+     *          Jetty's web context. If the specified set is null, and the
+     *          {@code servletInstances} set is null, the
+     *          {@code EmbeddedServletContainer} will scan candidate packages
+     *          for {@link HttpServlet} classes to load automatically.
+     * @return The builder instance.
+     */
+    public Builder withServletInstances(final Set<HttpServlet> servletInstances) {
+      this.servletInstances = servletInstances;
+      return this;
+    }
+
+    /**
+     * @param servletInstances Array of servlet instances to be registered with
+     *          Jetty's web context. If the specified array is null, and the
+     *          {@code servletInstances} set is null, the
+     *          {@code EmbeddedServletContainer} will scan candidate packages
+     *          for {@link HttpServlet} classes to load automatically.
+     * @return The builder instance.
+     */
+    public Builder withServletInstances(final HttpServlet ... servletInstances) {
+      if (servletInstances != null) {
+        this.servletInstances = new HashSet<>(servletInstances.length);
+        for (final HttpServlet servletInstance : servletInstances)
+          this.servletInstances.add(servletInstance);
+      }
+      else {
+        this.servletInstances = null;
+      }
+
+      return this;
+    }
+
     private Set<Class<? extends Filter>> filterClasses;
 
     /**
      * @param filterClasses Set of filter classes to be registered with Jetty's
-     *          web context. If the specified set is {@code null}, the
+     *          web context. If the specified set is null, and the
+     *          {@code filterInstances} set is null, the
      *          {@code EmbeddedServletContainer} will scan candidate packages
      *          for {@link Filter} classes to load automatically.
      * @return The builder instance.
      */
     public Builder withFilterClasses(final Set<Class<? extends Filter>> filterClasses) {
       this.filterClasses = filterClasses;
+      return this;
+    }
+
+    /**
+     * @param filterClasses Array of filter classes to be registered with
+     *          Jetty's web context. If the specified array is null, and the
+     *          {@code filterInstances} set is null, the
+     *          {@code EmbeddedServletContainer} will scan candidate packages
+     *          for {@link Filter} classes to load automatically.
+     * @return The builder instance.
+     */
+    @SafeVarargs
+    public final Builder withFilterClasses(final Class<? extends Filter> ... filterClasses) {
+      if (filterClasses != null) {
+        this.filterClasses = new HashSet<>(filterClasses.length);
+        for (final Class<? extends Filter> filterClass : filterClasses)
+          this.filterClasses.add(filterClass);
+      }
+      else {
+        this.filterClasses = null;
+      }
+
+      return this;
+    }
+
+    private Set<Filter> filterInstances;
+
+    /**
+     * @param filterInstances Set of filter instances to be registered with
+     *          Jetty's web context. If the specified set is null, and the
+     *          {@code filterInstances} set is null, the
+     *          {@code EmbeddedServletContainer} will scan candidate packages
+     *          for {@link Filter} classes to load automatically.
+     * @return The builder instance.
+     */
+    public Builder withFilterInstances(final Set<Filter> filterInstances) {
+      this.filterInstances = filterInstances;
+      return this;
+    }
+
+    /**
+     * @param filterInstances Array of filter instances to be registered with
+     *          Jetty's web context. If the specified array is null, and the
+     *          {@code filterInstances} set is null, the
+     *          {@code EmbeddedServletContainer} will scan candidate packages
+     *          for {@link Filter} classes to load automatically.
+     * @return The builder instance.
+     */
+    public Builder withFilterInstances(final Filter ... filterInstances) {
+      if (filterInstances != null) {
+        this.filterInstances = new HashSet<>(filterInstances.length);
+        for (final Filter filterInstance : filterInstances)
+          this.filterInstances.add(filterInstance);
+      }
+      else {
+        this.filterInstances = null;
+      }
+
       return this;
     }
 
@@ -370,7 +527,7 @@ public class EmbeddedServletContainer implements AutoCloseable {
      *         this builder instance.
      */
     public EmbeddedServletContainer build() {
-      return new EmbeddedServletContainer(port, keyStorePath, keyStorePassword, externalResourcesAccess, realm, servletClasses, filterClasses);
+      return new EmbeddedServletContainer(port, keyStorePath, keyStorePassword, externalResourcesAccess, realm, servletClasses, servletInstances, filterClasses, filterInstances);
     }
   }
 
@@ -387,43 +544,45 @@ public class EmbeddedServletContainer implements AutoCloseable {
    * @throws IllegalArgumentException If port is not between 0 and 65535.
    */
   public EmbeddedServletContainer(final int port) {
-    this(port, null, null, false, null, null, null);
+    this(port, null, null, false, null, null, null, null, null);
   }
 
   /**
    * Creates a new {@code EmbeddedServletContainer} with the specified port, and
    * servlet and filter classes to be registered with Jetty's web context.
-   * <p>
-   * If {@code servletClasses} and {@code filterClasses} are both set to
-   * {@code null}, the {@code EmbeddedServletContainer} will scan all classes of
-   * the context class loader to automatically locate servlet and filter
-   * classes.
    *
    * @param port The listen port, which must be between 0 and 65535. A value of
    *          0 advises Jetty to set a random port that is available. The port
    *          can thereafter be determined with {@link #getPort()}.
    * @param servletClasses Set of servlet classes to be registered with Jetty's
-   *          web context. If the specified set is {@code null}, the
+   *          web context. If the specified set is null, and the
+   *          {@code servletInstances} set is null, the
+   *          {@code EmbeddedServletContainer} will scan candidate packages for
+   *          {@link HttpServlet} classes to load automatically.
+   * @param servletInstances Set of servlet instances to be registered with
+   *          Jetty's web context. If the specified set is null, and the
+   *          {@code servletInstances} set is null, the
    *          {@code EmbeddedServletContainer} will scan candidate packages for
    *          {@link HttpServlet} classes to load automatically.
    * @param filterClasses Set of filter classes to be registered with Jetty's
-   *          web context. If the specified set is {@code null}, the
+   *          web context. If the specified set is null, and the
+   *          {@code filterInstances} set is null, the
+   *          {@code EmbeddedServletContainer} will scan candidate packages for
+   *          {@link Filter} classes to load automatically.
+   * @param filterInstances Set of filter instances to be registered with
+   *          Jetty's web context. If the specified set is null, and the
+   *          {@code filterInstances} set is null, the
    *          {@code EmbeddedServletContainer} will scan candidate packages for
    *          {@link Filter} classes to load automatically.
    * @throws IllegalArgumentException If port is not between 0 and 65535.
    */
-  public EmbeddedServletContainer(final int port, final Set<Class<? extends HttpServlet>> servletClasses, final Set<Class<? extends Filter>> filterClasses) {
-    this(port, null, null, false, null, null, null);
+  public EmbeddedServletContainer(final int port, final Set<Class<? extends HttpServlet>> servletClasses, final Set<HttpServlet> servletInstances, final Set<Class<? extends Filter>> filterClasses, final Set<Filter> filterInstances) {
+    this(port, null, null, false, null, servletClasses, servletInstances, filterClasses, filterInstances);
   }
 
   /**
    * Creates a new {@code EmbeddedServletContainer} with the specified port, and
    * servlet and filter classes to be registered with Jetty's web context.
-   * <p>
-   * If {@code servletClasses} and {@code filterClasses} are both set to
-   * {@code null}, the {@code EmbeddedServletContainer} will scan all classes of
-   * the context class loader to automatically locate servlet and filter
-   * classes.
    *
    * @param port The listen port, which must be between 0 and 65535. A value of
    *          0 advises Jetty to set a random port that is available. The port
@@ -434,21 +593,33 @@ public class EmbeddedServletContainer implements AutoCloseable {
    *          listings for its resources.
    * @param realm The realm of roles and credentials.
    * @param servletClasses Set of servlet classes to be registered with Jetty's
-   *          web context. If the specified set is {@code null}, the
+   *          web context. If the specified set is null, and the
+   *          {@code servletInstances} set is null, the
+   *          {@code EmbeddedServletContainer} will scan candidate packages for
+   *          {@link HttpServlet} classes to load automatically.
+   * @param servletInstances Set of servlet instances to be registered with
+   *          Jetty's web context. If the specified set is null, and the
+   *          {@code servletInstances} set is null, the
    *          {@code EmbeddedServletContainer} will scan candidate packages for
    *          {@link HttpServlet} classes to load automatically.
    * @param filterClasses Set of filter classes to be registered with Jetty's
-   *          web context. If the specified set is {@code null}, the
+   *          web context. If the specified set is null, and the
+   *          {@code filterInstances} set is null, the
+   *          {@code EmbeddedServletContainer} will scan candidate packages for
+   *          {@link Filter} classes to load automatically.
+   * @param filterInstances Set of filter instances to be registered with
+   *          Jetty's web context. If the specified set is null, and the
+   *          {@code filterInstances} set is null, the
    *          {@code EmbeddedServletContainer} will scan candidate packages for
    *          {@link Filter} classes to load automatically.
    * @throws IllegalArgumentException If port is not between 0 and 65535.
    */
-  public EmbeddedServletContainer(final int port, final String keyStorePath, final String keyStorePassword, final boolean externalResourcesAccess, final Realm realm, final Set<Class<? extends HttpServlet>> servletClasses, final Set<Class<? extends Filter>> filterClasses) {
+  public EmbeddedServletContainer(final int port, final String keyStorePath, final String keyStorePassword, final boolean externalResourcesAccess, final Realm realm, final Set<Class<? extends HttpServlet>> servletClasses, final Set<HttpServlet> servletInstances, final Set<Class<? extends Filter>> filterClasses, final Set<Filter> filterInstances) {
     if (port < 0 || 65535 < port)
       throw new IllegalArgumentException("Port (" + port + ") must be between 0 and 65535");
 
     this.server = new Server();
-    final ServletContextHandler context = addAllServlets(realm, servletClasses, filterClasses);
+    final ServletContextHandler context = addAllServlets(realm, servletClasses, servletInstances, filterClasses, filterInstances);
     server.setConnectors(new Connector[] {makeConnector(server, port, keyStorePath, keyStorePassword)});
 
     final HandlerCollection handlers = new HandlerCollection();
@@ -476,6 +647,16 @@ public class EmbeddedServletContainer implements AutoCloseable {
     // For Log Latency, see "%D" formatting option.
     final CustomRequestLog requestLog = new CustomRequestLog(new Slf4jRequestLogWriter(), CustomRequestLog.EXTENDED_NCSA_FORMAT);
     server.setRequestLog(requestLog);
+  }
+
+  /**
+   * Creates a new {@code EmbeddedServletContainer} from the specified
+   * {@link Builder}.
+   *
+   * @param builder The {@code Builder}.
+   */
+  public EmbeddedServletContainer(final EmbeddedServletContainer.Builder builder) {
+    this(builder.port, builder.keyStorePath, builder.keyStorePassword, builder.externalResourcesAccess, builder.realm, builder.servletClasses, builder.servletInstances, builder.filterClasses, builder.filterInstances);
   }
 
   /**
