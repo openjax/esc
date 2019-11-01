@@ -28,23 +28,28 @@ import javax.servlet.ServletResponse;
 import javax.servlet.annotation.WebFilter;
 
 @WebFilter(filterName="UncaughtServletExceptionFilter", urlPatterns="/*", dispatcherTypes=DispatcherType.REQUEST)
-public class UncaughtServletExceptionFilter implements Filter {
+class UncaughtServletExceptionFilter implements Filter {
+  private final UncaughtServletExceptionHandler uncaughtServletExceptionHandler;
+
+  UncaughtServletExceptionFilter(final UncaughtServletExceptionHandler uncaughtServletExceptionHandler) {
+    this.uncaughtServletExceptionHandler = uncaughtServletExceptionHandler;
+  }
+
   @Override
   public void init(final FilterConfig filterConfig) throws ServletException {
   }
 
   @Override
   public void doFilter(final ServletRequest request, final ServletResponse response, final FilterChain chain) throws IOException, ServletException {
-    final UncaughtServletExceptionHandler uncaughtExceptionHandler = EmbeddedServletContainer.getUncaughtServletExceptionHandler();
     try {
       chain.doFilter(request, response);
     }
     catch (final Exception e1) {
-      if (uncaughtExceptionHandler == null)
+      if (uncaughtServletExceptionHandler == null)
         throw e1;
 
       try {
-        uncaughtExceptionHandler.uncaughtServletException(request, response, e1);
+        uncaughtServletExceptionHandler.uncaughtServletException(request, response, e1);
       }
       catch (final RuntimeException e2) {
         e2.addSuppressed(e1);

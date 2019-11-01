@@ -23,7 +23,7 @@ import org.junit.Test;
 public class EmbeddedServletContainerTest {
   @Test
   public void testExceptions() throws Exception {
-    try (final EmbeddedServletContainer container = new EmbeddedServletContainer(-1)) {
+    try (final EmbeddedServletContainer container = new EmbeddedServletContainer(-1, null)) {
       fail("Expected IllegalArgumentException");
     }
     catch (final IllegalArgumentException e) {

@@ -80,8 +80,6 @@ public class EmbeddedServletContainer implements AutoCloseable {
   private static final Set<Class<? extends Filter>> addedFilterClasses = new HashSet<>();
   private static final String[] excludePackageStartsWith = {"jdk", "java", "javax", "com.sun", "sun", "org.w3c", "org.xml", "org.jvnet", "org.joda", "org.jcp", "apple.security"};
 
-  private static UncaughtServletExceptionHandler uncaughtServletExceptionHandler;
-
   private static boolean acceptPackage(final Package pkg) {
     for (int i = 0; i < excludePackageStartsWith.length; ++i)
       if (pkg.getName().startsWith(excludePackageStartsWith[i] + "."))
@@ -235,7 +233,7 @@ public class EmbeddedServletContainer implements AutoCloseable {
   }
 
   @SuppressWarnings("unchecked")
-  private static ServletContextHandler addAllServlets(final Realm realm, final Set<Class<? extends HttpServlet>> servletClasses, final Set<HttpServlet> servletInstances, final Set<Class<? extends Filter>> filterClasses, final Set<Filter> filterInstances) {
+  private static ServletContextHandler addAllServlets(final Realm realm, final UncaughtServletExceptionHandler uncaughtServletExceptionHandler, final Set<Class<? extends HttpServlet>> servletClasses, final Set<HttpServlet> servletInstances, final Set<Class<? extends Filter>> filterClasses, final Set<Filter> filterInstances) {
     final ServletContextHandler context = createServletContextHandler(realm);
     if (servletClasses != null)
       for (final Class<? extends HttpServlet> servletClass : servletClasses)
@@ -246,7 +244,9 @@ public class EmbeddedServletContainer implements AutoCloseable {
         addServlet(context, null, servletInstance);
 
     // FIXME: Without the UncaughtServletExceptionFilter, errors would lead to: net::ERR_INCOMPLETE_CHUNKED_ENCODING
-    addFilter(context, UncaughtServletExceptionFilter.class, null);
+    if (uncaughtServletExceptionHandler != null)
+      addFilter(context, null, new UncaughtServletExceptionFilter(uncaughtServletExceptionHandler));
+
     if (filterClasses != null)
       for (final Class<? extends Filter> filterClass : filterClasses)
         addFilter(context, filterClass, null);
@@ -281,25 +281,6 @@ public class EmbeddedServletContainer implements AutoCloseable {
     }
 
     return context;
-  }
-
-  /**
-   * Sets the handler for uncaught servlet exceptions.
-   *
-   * @param uncaughtServletExceptionHandler The
-   *          {@code UncaughtServletExceptionHandler}.
-   */
-  public static void setUncaughtServletExceptionHandler(final UncaughtServletExceptionHandler uncaughtServletExceptionHandler) {
-    // FIXME: Make the UncaughtServletExceptionHandler instance a member of the
-    // FIXME: EmbeddedServletContainer.
-    EmbeddedServletContainer.uncaughtServletExceptionHandler = uncaughtServletExceptionHandler;
-  }
-
-  /**
-   * @return The handler for uncaught servlet exceptions.
-   */
-  protected static UncaughtServletExceptionHandler getUncaughtServletExceptionHandler() {
-    return EmbeddedServletContainer.uncaughtServletExceptionHandler;
   }
 
   private static ServerConnector makeConnector(final Server server, final int port, final String keyStorePath, final String keyStorePassword) {
@@ -496,6 +477,18 @@ public class EmbeddedServletContainer implements AutoCloseable {
       return this;
     }
 
+    private UncaughtServletExceptionHandler uncaughtServletExceptionHandler;
+
+    /**
+     * @param uncaughtServletExceptionHandler Handler to be used for uncaught
+     *          servlet exceptions.
+     * @return The builder instance.
+     */
+    public Builder withUncaughtServletExceptionHandler(final UncaughtServletExceptionHandler uncaughtServletExceptionHandler) {
+      this.uncaughtServletExceptionHandler = uncaughtServletExceptionHandler;
+      return this;
+    }
+
     private boolean externalResourcesAccess;
 
     /**
@@ -527,7 +520,7 @@ public class EmbeddedServletContainer implements AutoCloseable {
      *         this builder instance.
      */
     public EmbeddedServletContainer build() {
-      return new EmbeddedServletContainer(port, keyStorePath, keyStorePassword, externalResourcesAccess, realm, servletClasses, servletInstances, filterClasses, filterInstances);
+      return new EmbeddedServletContainer(port, keyStorePath, keyStorePassword, externalResourcesAccess, realm, uncaughtServletExceptionHandler, servletClasses, servletInstances, filterClasses, filterInstances);
     }
   }
 
@@ -541,10 +534,12 @@ public class EmbeddedServletContainer implements AutoCloseable {
    * @param port The listen port, which must be between 0 and 65535. A value of
    *          0 advises Jetty to set a random port that is available. The port
    *          can thereafter be determined with {@link #getPort()}.
+   * @param uncaughtServletExceptionHandler Handler to be used for uncaught
+   *          servlet exceptions.
    * @throws IllegalArgumentException If port is not between 0 and 65535.
    */
-  public EmbeddedServletContainer(final int port) {
-    this(port, null, null, false, null, null, null, null, null);
+  public EmbeddedServletContainer(final int port, final UncaughtServletExceptionHandler uncaughtServletExceptionHandler) {
+    this(port, null, null, false, null, uncaughtServletExceptionHandler, null, null, null, null);
   }
 
   /**
@@ -554,6 +549,8 @@ public class EmbeddedServletContainer implements AutoCloseable {
    * @param port The listen port, which must be between 0 and 65535. A value of
    *          0 advises Jetty to set a random port that is available. The port
    *          can thereafter be determined with {@link #getPort()}.
+   * @param uncaughtServletExceptionHandler Handler to be used for uncaught
+   *          servlet exceptions.
    * @param servletClasses Set of servlet classes to be registered with Jetty's
    *          web context. If the specified set is null, and the
    *          {@code servletInstances} set is null, the
@@ -576,8 +573,8 @@ public class EmbeddedServletContainer implements AutoCloseable {
    *          {@link Filter} classes to load automatically.
    * @throws IllegalArgumentException If port is not between 0 and 65535.
    */
-  public EmbeddedServletContainer(final int port, final Set<Class<? extends HttpServlet>> servletClasses, final Set<HttpServlet> servletInstances, final Set<Class<? extends Filter>> filterClasses, final Set<Filter> filterInstances) {
-    this(port, null, null, false, null, servletClasses, servletInstances, filterClasses, filterInstances);
+  public EmbeddedServletContainer(final int port, final UncaughtServletExceptionHandler uncaughtServletExceptionHandler, final Set<Class<? extends HttpServlet>> servletClasses, final Set<HttpServlet> servletInstances, final Set<Class<? extends Filter>> filterClasses, final Set<Filter> filterInstances) {
+    this(port, null, null, false, null, uncaughtServletExceptionHandler, servletClasses, servletInstances, filterClasses, filterInstances);
   }
 
   /**
@@ -592,6 +589,8 @@ public class EmbeddedServletContainer implements AutoCloseable {
    * @param externalResourcesAccess Whether the server should provide directory
    *          listings for its resources.
    * @param realm The realm of roles and credentials.
+   * @param uncaughtServletExceptionHandler Handler to be used for uncaught
+   *          servlet exceptions.
    * @param servletClasses Set of servlet classes to be registered with Jetty's
    *          web context. If the specified set is null, and the
    *          {@code servletInstances} set is null, the
@@ -614,12 +613,13 @@ public class EmbeddedServletContainer implements AutoCloseable {
    *          {@link Filter} classes to load automatically.
    * @throws IllegalArgumentException If port is not between 0 and 65535.
    */
-  public EmbeddedServletContainer(final int port, final String keyStorePath, final String keyStorePassword, final boolean externalResourcesAccess, final Realm realm, final Set<Class<? extends HttpServlet>> servletClasses, final Set<HttpServlet> servletInstances, final Set<Class<? extends Filter>> filterClasses, final Set<Filter> filterInstances) {
+  public EmbeddedServletContainer(final int port, final String keyStorePath, final String keyStorePassword, final boolean externalResourcesAccess, final Realm realm, final UncaughtServletExceptionHandler uncaughtServletExceptionHandler, final Set<Class<? extends HttpServlet>> servletClasses, final Set<HttpServlet> servletInstances, final Set<Class<? extends Filter>> filterClasses, final Set<Filter> filterInstances) {
     if (port < 0 || 65535 < port)
       throw new IllegalArgumentException("Port (" + port + ") must be between 0 and 65535");
 
     this.server = new Server();
-    final ServletContextHandler context = addAllServlets(realm, servletClasses, servletInstances, filterClasses, filterInstances);
+
+    final ServletContextHandler context = addAllServlets(realm, uncaughtServletExceptionHandler, servletClasses, servletInstances, filterClasses, filterInstances);
     server.setConnectors(new Connector[] {makeConnector(server, port, keyStorePath, keyStorePassword)});
 
     final HandlerCollection handlers = new HandlerCollection();
@@ -627,7 +627,8 @@ public class EmbeddedServletContainer implements AutoCloseable {
       handlers.addHandler(handler);
 
     if (externalResourcesAccess) {
-      // FIXME: HACK: Why cannot I just get the "/" resource? In the IDE it works, but in the standalone jar, it does not
+      // FIXME: HACK: Why cannot I just get the "/" resource? In the IDE it
+      // FIXME: works, but in the standalone jar, it does not
       final String resourceName = getClass().getName().replace('.', '/').concat(".class");
       final String configResourcePath = Thread.currentThread().getContextClassLoader().getResource(resourceName).toExternalForm();
       final URL rootResourceURL = URLs.create(configResourcePath.substring(0, configResourcePath.length() - resourceName.length()));
@@ -643,8 +644,8 @@ public class EmbeddedServletContainer implements AutoCloseable {
     server.setHandler(handlers);
 
     // Look at the javadoc for CustomRequestLog.
-    // There is no special case handling of "proxiedForAddress", relies on ForwardRequestCustomizer.
-    // For Log Latency, see "%D" formatting option.
+    // There is no special case handling of "proxiedForAddress", relies on
+    // ForwardRequestCustomizer. For Log Latency, see "%D" formatting option.
     final CustomRequestLog requestLog = new CustomRequestLog(new Slf4jRequestLogWriter(), CustomRequestLog.EXTENDED_NCSA_FORMAT);
     server.setRequestLog(requestLog);
   }
@@ -656,7 +657,7 @@ public class EmbeddedServletContainer implements AutoCloseable {
    * @param builder The {@code Builder}.
    */
   public EmbeddedServletContainer(final EmbeddedServletContainer.Builder builder) {
-    this(builder.port, builder.keyStorePath, builder.keyStorePassword, builder.externalResourcesAccess, builder.realm, builder.servletClasses, builder.servletInstances, builder.filterClasses, builder.filterInstances);
+    this(builder.port, builder.keyStorePath, builder.keyStorePassword, builder.externalResourcesAccess, builder.realm, builder.uncaughtServletExceptionHandler, builder.servletClasses, builder.servletInstances, builder.filterClasses, builder.filterInstances);
   }
 
   /**
@@ -665,7 +666,8 @@ public class EmbeddedServletContainer implements AutoCloseable {
    * @throws Exception If a component fails to start.
    */
   public void start() throws Exception {
-    server.start();
+    if (!server.isStarting() && !server.isStarted())
+      server.start();
   }
 
   /**
@@ -678,7 +680,8 @@ public class EmbeddedServletContainer implements AutoCloseable {
    */
   @Override
   public void close() throws Exception {
-    server.stop();
+    if (!server.isStopping() && !server.isStopped())
+      server.stop();
   }
 
   /**
