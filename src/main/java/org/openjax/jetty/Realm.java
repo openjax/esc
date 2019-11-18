@@ -33,7 +33,7 @@ public class Realm implements Cloneable, Serializable {
   private final String name;
 
   /**
-   * Creates a new {@code Realm} with the specified name.
+   * Creates a new {@link Realm} with the specified name.
    *
    * @param name The name.
    */
@@ -44,7 +44,7 @@ public class Realm implements Cloneable, Serializable {
   /**
    * Copy constructor.
    *
-   * @param copy The {@code Realm} to copy.
+   * @param copy The {@link Realm} to copy.
    */
   protected Realm(final Realm copy) {
     this.name = copy.name;
@@ -53,6 +53,8 @@ public class Realm implements Cloneable, Serializable {
   }
 
   /**
+   * Returns the name of the realm.
+   *
    * @return The name of the realm.
    */
   public String getName() {
@@ -60,7 +62,7 @@ public class Realm implements Cloneable, Serializable {
   }
 
   /**
-   * Adds a role to this {@code Realm}.
+   * Adds a role to this {@link Realm}.
    *
    * @param role The role.
    */
@@ -69,14 +71,16 @@ public class Realm implements Cloneable, Serializable {
   }
 
   /**
-   * @return The set of roles of this {@code Realm}.
+   * Returns the set of roles of this {@link Realm}.
+   *
+   * @return The set of roles of this {@link Realm}.
    */
   public Set<String> getRoles() {
     return roles;
   }
 
   /**
-   * Adds or reassigns a username/password credential to this {@code Realm}.
+   * Adds or reassigns a username/password credential to this {@link Realm}.
    *
    * @param username The username.
    * @param password The password.
@@ -86,7 +90,9 @@ public class Realm implements Cloneable, Serializable {
   }
 
   /**
-   * @return The credentials of this {@code Realm.}
+   * Returns the credentials of this {@code Realm}.
+   *
+   * @return The credentials of this {@code Realm}.
    */
   public Map<String,String> getCredentials() {
     return this.credentials;

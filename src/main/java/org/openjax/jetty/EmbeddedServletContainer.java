@@ -306,6 +306,8 @@ public class EmbeddedServletContainer implements AutoCloseable {
     private int port;
 
     /**
+     * Returns the builder instance.
+     *
      * @param port The listen port, which must be between 0 and 65535. A value
      *          of 0 advises Jetty to set a random port that is available. The
      *          port can thereafter be determined with {@link #getPort()}.
@@ -323,10 +325,12 @@ public class EmbeddedServletContainer implements AutoCloseable {
     private Set<Class<? extends HttpServlet>> servletClasses;
 
     /**
+     * Returns the builder instance.
+     *
      * @param servletClasses Set of servlet classes to be registered with
      *          Jetty's web context. If the specified set is null, and the
      *          {@code servletInstances} set is null, the
-     *          {@code EmbeddedServletContainer} will scan candidate packages
+     *          {@link EmbeddedServletContainer} will scan candidate packages
      *          for {@link HttpServlet} classes to load automatically.
      * @return The builder instance.
      */
@@ -336,10 +340,12 @@ public class EmbeddedServletContainer implements AutoCloseable {
     }
 
     /**
+     * Returns the builder instance.
+     *
      * @param servletClasses Array of servlet classes to be registered with
      *          Jetty's web context. If the specified array is null, and the
      *          {@code servletInstances} set is null, the
-     *          {@code EmbeddedServletContainer} will scan candidate packages
+     *          {@link EmbeddedServletContainer} will scan candidate packages
      *          for {@link HttpServlet} classes to load automatically.
      * @return The builder instance.
      */
@@ -360,10 +366,12 @@ public class EmbeddedServletContainer implements AutoCloseable {
     private Set<HttpServlet> servletInstances;
 
     /**
+     * Returns the builder instance.
+     *
      * @param servletInstances Set of servlet instances to be registered with
      *          Jetty's web context. If the specified set is null, and the
      *          {@code servletInstances} set is null, the
-     *          {@code EmbeddedServletContainer} will scan candidate packages
+     *          {@link EmbeddedServletContainer} will scan candidate packages
      *          for {@link HttpServlet} classes to load automatically.
      * @return The builder instance.
      */
@@ -373,10 +381,12 @@ public class EmbeddedServletContainer implements AutoCloseable {
     }
 
     /**
+     * Returns the builder instance.
+     *
      * @param servletInstances Array of servlet instances to be registered with
      *          Jetty's web context. If the specified array is null, and the
      *          {@code servletInstances} set is null, the
-     *          {@code EmbeddedServletContainer} will scan candidate packages
+     *          {@link EmbeddedServletContainer} will scan candidate packages
      *          for {@link HttpServlet} classes to load automatically.
      * @return The builder instance.
      */
@@ -396,10 +406,12 @@ public class EmbeddedServletContainer implements AutoCloseable {
     private Set<Class<? extends Filter>> filterClasses;
 
     /**
+     * Returns the builder instance.
+     *
      * @param filterClasses Set of filter classes to be registered with Jetty's
      *          web context. If the specified set is null, and the
      *          {@code filterInstances} set is null, the
-     *          {@code EmbeddedServletContainer} will scan candidate packages
+     *          {@link EmbeddedServletContainer} will scan candidate packages
      *          for {@link Filter} classes to load automatically.
      * @return The builder instance.
      */
@@ -409,10 +421,12 @@ public class EmbeddedServletContainer implements AutoCloseable {
     }
 
     /**
+     * Returns the builder instance.
+     *
      * @param filterClasses Array of filter classes to be registered with
      *          Jetty's web context. If the specified array is null, and the
      *          {@code filterInstances} set is null, the
-     *          {@code EmbeddedServletContainer} will scan candidate packages
+     *          {@link EmbeddedServletContainer} will scan candidate packages
      *          for {@link Filter} classes to load automatically.
      * @return The builder instance.
      */
@@ -433,10 +447,12 @@ public class EmbeddedServletContainer implements AutoCloseable {
     private Set<Filter> filterInstances;
 
     /**
+     * Returns the builder instance.
+     *
      * @param filterInstances Set of filter instances to be registered with
      *          Jetty's web context. If the specified set is null, and the
      *          {@code filterInstances} set is null, the
-     *          {@code EmbeddedServletContainer} will scan candidate packages
+     *          {@link EmbeddedServletContainer} will scan candidate packages
      *          for {@link Filter} classes to load automatically.
      * @return The builder instance.
      */
@@ -446,10 +462,12 @@ public class EmbeddedServletContainer implements AutoCloseable {
     }
 
     /**
+     * Returns the builder instance.
+     *
      * @param filterInstances Array of filter instances to be registered with
      *          Jetty's web context. If the specified array is null, and the
      *          {@code filterInstances} set is null, the
-     *          {@code EmbeddedServletContainer} will scan candidate packages
+     *          {@link EmbeddedServletContainer} will scan candidate packages
      *          for {@link Filter} classes to load automatically.
      * @return The builder instance.
      */
@@ -469,6 +487,8 @@ public class EmbeddedServletContainer implements AutoCloseable {
     private Realm realm;
 
     /**
+     * Returns the builder instance.
+     *
      * @param realm The realm of roles and credentials.
      * @return The builder instance.
      */
@@ -480,6 +500,8 @@ public class EmbeddedServletContainer implements AutoCloseable {
     private UncaughtServletExceptionHandler uncaughtServletExceptionHandler;
 
     /**
+     * Returns the builder instance.
+     *
      * @param uncaughtServletExceptionHandler Handler to be used for uncaught
      *          servlet exceptions.
      * @return The builder instance.
@@ -492,6 +514,8 @@ public class EmbeddedServletContainer implements AutoCloseable {
     private boolean externalResourcesAccess;
 
     /**
+     * Returns the builder instance.
+     *
      * @param externalResourcesAccess Whether the server should provide
      *          directory listings for its resources.
      * @return The builder instance.
@@ -505,6 +529,8 @@ public class EmbeddedServletContainer implements AutoCloseable {
     private String keyStorePassword;
 
     /**
+     * Returns the builder instance.
+     *
      * @param keyStorePath The path of the SSL keystore.
      * @param keyStorePassword The password for the key store.
      * @return The builder instance.
@@ -516,7 +542,10 @@ public class EmbeddedServletContainer implements AutoCloseable {
     }
 
     /**
-     * @return A new {@code EmbeddedServletContainer} with the configuration in
+     * Returns a new {@link EmbeddedServletContainer} with the configuration in
+     * this builder instance.
+     *
+     * @return A new {@link EmbeddedServletContainer} with the configuration in
      *         this builder instance.
      */
     public EmbeddedServletContainer build() {
@@ -527,8 +556,8 @@ public class EmbeddedServletContainer implements AutoCloseable {
   private final Server server;
 
   /**
-   * Creates a new {@code EmbeddedServletContainer} with the specified port. The
-   * {@code EmbeddedServletContainer} will scan all classes of the context class
+   * Creates a new {@link EmbeddedServletContainer} with the specified port. The
+   * {@link EmbeddedServletContainer} will scan all classes of the context class
    * loader to automatically locate servlet and filter classes.
    *
    * @param port The listen port, which must be between 0 and 65535. A value of
@@ -543,7 +572,7 @@ public class EmbeddedServletContainer implements AutoCloseable {
   }
 
   /**
-   * Creates a new {@code EmbeddedServletContainer} with the specified port, and
+   * Creates a new {@link EmbeddedServletContainer} with the specified port, and
    * servlet and filter classes to be registered with Jetty's web context.
    *
    * @param port The listen port, which must be between 0 and 65535. A value of
@@ -554,22 +583,22 @@ public class EmbeddedServletContainer implements AutoCloseable {
    * @param servletClasses Set of servlet classes to be registered with Jetty's
    *          web context. If the specified set is null, and the
    *          {@code servletInstances} set is null, the
-   *          {@code EmbeddedServletContainer} will scan candidate packages for
+   *          {@link EmbeddedServletContainer} will scan candidate packages for
    *          {@link HttpServlet} classes to load automatically.
    * @param servletInstances Set of servlet instances to be registered with
    *          Jetty's web context. If the specified set is null, and the
    *          {@code servletInstances} set is null, the
-   *          {@code EmbeddedServletContainer} will scan candidate packages for
+   *          {@link EmbeddedServletContainer} will scan candidate packages for
    *          {@link HttpServlet} classes to load automatically.
    * @param filterClasses Set of filter classes to be registered with Jetty's
    *          web context. If the specified set is null, and the
    *          {@code filterInstances} set is null, the
-   *          {@code EmbeddedServletContainer} will scan candidate packages for
+   *          {@link EmbeddedServletContainer} will scan candidate packages for
    *          {@link Filter} classes to load automatically.
    * @param filterInstances Set of filter instances to be registered with
    *          Jetty's web context. If the specified set is null, and the
    *          {@code filterInstances} set is null, the
-   *          {@code EmbeddedServletContainer} will scan candidate packages for
+   *          {@link EmbeddedServletContainer} will scan candidate packages for
    *          {@link Filter} classes to load automatically.
    * @throws IllegalArgumentException If port is not between 0 and 65535.
    */
@@ -578,7 +607,7 @@ public class EmbeddedServletContainer implements AutoCloseable {
   }
 
   /**
-   * Creates a new {@code EmbeddedServletContainer} with the specified port, and
+   * Creates a new {@link EmbeddedServletContainer} with the specified port, and
    * servlet and filter classes to be registered with Jetty's web context.
    *
    * @param port The listen port, which must be between 0 and 65535. A value of
@@ -594,22 +623,22 @@ public class EmbeddedServletContainer implements AutoCloseable {
    * @param servletClasses Set of servlet classes to be registered with Jetty's
    *          web context. If the specified set is null, and the
    *          {@code servletInstances} set is null, the
-   *          {@code EmbeddedServletContainer} will scan candidate packages for
+   *          {@link EmbeddedServletContainer} will scan candidate packages for
    *          {@link HttpServlet} classes to load automatically.
    * @param servletInstances Set of servlet instances to be registered with
    *          Jetty's web context. If the specified set is null, and the
    *          {@code servletInstances} set is null, the
-   *          {@code EmbeddedServletContainer} will scan candidate packages for
+   *          {@link EmbeddedServletContainer} will scan candidate packages for
    *          {@link HttpServlet} classes to load automatically.
    * @param filterClasses Set of filter classes to be registered with Jetty's
    *          web context. If the specified set is null, and the
    *          {@code filterInstances} set is null, the
-   *          {@code EmbeddedServletContainer} will scan candidate packages for
+   *          {@link EmbeddedServletContainer} will scan candidate packages for
    *          {@link Filter} classes to load automatically.
    * @param filterInstances Set of filter instances to be registered with
    *          Jetty's web context. If the specified set is null, and the
    *          {@code filterInstances} set is null, the
-   *          {@code EmbeddedServletContainer} will scan candidate packages for
+   *          {@link EmbeddedServletContainer} will scan candidate packages for
    *          {@link Filter} classes to load automatically.
    * @throws IllegalArgumentException If port is not between 0 and 65535.
    */
@@ -651,10 +680,10 @@ public class EmbeddedServletContainer implements AutoCloseable {
   }
 
   /**
-   * Creates a new {@code EmbeddedServletContainer} from the specified
+   * Creates a new {@link EmbeddedServletContainer} from the specified
    * {@link Builder}.
    *
-   * @param builder The {@code Builder}.
+   * @param builder The {@link Builder}.
    */
   public EmbeddedServletContainer(final EmbeddedServletContainer.Builder builder) {
     this(builder.port, builder.keyStorePath, builder.keyStorePassword, builder.externalResourcesAccess, builder.realm, builder.uncaughtServletExceptionHandler, builder.servletClasses, builder.servletInstances, builder.filterClasses, builder.filterInstances);
@@ -696,6 +725,9 @@ public class EmbeddedServletContainer implements AutoCloseable {
   private int port = 0;
 
   /**
+   * Returns the actual port the connector is listening on, or -1 if it has not
+   * been opened, or -2 if it has been closed.
+   *
    * @return The actual port the connector is listening on, or -1 if it has not
    *         been opened, or -2 if it has been closed.
    */

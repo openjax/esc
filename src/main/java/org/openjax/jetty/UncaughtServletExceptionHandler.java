@@ -27,8 +27,8 @@ public interface UncaughtServletExceptionHandler {
    * Called by the servlet container in the event of an uncaught servlet
    * exception.
    *
-   * @param request The {@code ServletRequest} associated with the exception.
-   * @param response The {@code ServletResponse} associated with the exception.
+   * @param request The {@link ServletRequest} associated with the exception.
+   * @param response The {@link ServletResponse} associated with the exception.
    * @param e The exception.
    */
   void uncaughtServletException(ServletRequest request, ServletResponse response, Exception e);
