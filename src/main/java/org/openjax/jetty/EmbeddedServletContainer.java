@@ -293,7 +293,7 @@ public class EmbeddedServletContainer implements AutoCloseable {
     final HttpConfiguration https = new HttpConfiguration();
     https.addCustomizer(new SecureRequestCustomizer());
 
-    final SslContextFactory sslContextFactory = new SslContextFactory();
+    final SslContextFactory sslContextFactory = new SslContextFactory.Server();
     sslContextFactory.setKeyStorePath(Thread.currentThread().getContextClassLoader().getResource(keyStorePath).toExternalForm());
     sslContextFactory.setKeyStorePassword(keyStorePassword);
 
