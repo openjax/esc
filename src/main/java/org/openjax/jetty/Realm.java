@@ -117,10 +117,10 @@ public class Realm implements Cloneable, Serializable {
 
   @Override
   public int hashCode() {
-    int hashCode = 7;
-    hashCode ^= 31 * credentials.hashCode();
-    hashCode ^= 31 * roles.hashCode();
-    hashCode ^= 31 * name.hashCode();
+    int hashCode = 1;
+    hashCode = 31 * hashCode + (credentials == null ? 0 : credentials.hashCode());
+    hashCode = 31 * hashCode + (roles == null ? 0 : roles.hashCode());
+    hashCode = 31 * hashCode + (name == null ? 0 : name.hashCode());
     return hashCode;
   }
 }
