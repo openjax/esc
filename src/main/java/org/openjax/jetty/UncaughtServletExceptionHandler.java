@@ -22,6 +22,7 @@ import javax.servlet.ServletResponse;
 /**
  * Handler for uncaught servlet exceptions.
  */
+@FunctionalInterface
 public interface UncaughtServletExceptionHandler {
   /**
    * Called by the servlet container in the event of an uncaught servlet

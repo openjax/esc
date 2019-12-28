@@ -21,6 +21,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 import java.net.URL;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -98,7 +99,7 @@ public class EmbeddedServletContainer implements AutoCloseable {
     return getConstraint(authTypeToConstraint, authType, role);
   }
 
-  private static Constraint getConstraint(final Map<String,Constraint> authTypeToConstraint, final String authType, final String role) {
+  private static Constraint getConstraint(final Map<? super String,Constraint> authTypeToConstraint, final String authType, final String role) {
     Constraint constraint = authTypeToConstraint.get(authType);
     if (constraint != null)
       return constraint;
@@ -109,7 +110,7 @@ public class EmbeddedServletContainer implements AutoCloseable {
   }
 
   private static void addServlet(final ServletContextHandler context, Class<? extends HttpServlet> servletClass, HttpServlet servletInstance) {
-    if (servletClass == null ? servletInstance == null : servletInstance != null)
+    if ((servletClass == null) == (servletInstance == null))
       throw new IllegalArgumentException("servletClass XOR servletInstance MUST BE not null");
 
     if (servletClass == null)
@@ -174,8 +175,8 @@ public class EmbeddedServletContainer implements AutoCloseable {
     }
   }
 
-  private static void addFilter(final ServletContextHandler context, Class<? extends Filter> filterClass, Filter filterInstance) {
-    if (filterClass == null ? filterInstance == null : filterInstance != null)
+  private static void addFilter(final ServletContextHandler context, Class<? extends Filter> filterClass, final Filter filterInstance) {
+    if ((filterClass == null) == (filterInstance == null))
       throw new IllegalArgumentException("filterClass XOR filterInstance MUST BE not null");
 
     if (filterClass == null)
@@ -191,7 +192,8 @@ public class EmbeddedServletContainer implements AutoCloseable {
       return;
     }
 
-    // FIXME: Is it supposed to be EnumSet.noneOf(DispatcherType.class)??? in the addFilter call
+    // FIXME: Is it supposed to be EnumSet.noneOf(DispatcherType.class)??? in
+    // the addFilter call
     logger.info(filterClass.getName() + " " + Arrays.toString(webFilter.urlPatterns()));
     if (filterInstance != null) {
       final Map<String,String> initParams = new HashMap<>();
@@ -233,7 +235,7 @@ public class EmbeddedServletContainer implements AutoCloseable {
   }
 
   @SuppressWarnings("unchecked")
-  private static ServletContextHandler addAllServlets(final Realm realm, final UncaughtServletExceptionHandler uncaughtServletExceptionHandler, final Set<Class<? extends HttpServlet>> servletClasses, final Set<HttpServlet> servletInstances, final Set<Class<? extends Filter>> filterClasses, final Set<Filter> filterInstances) {
+  private static ServletContextHandler addAllServlets(final Realm realm, final UncaughtServletExceptionHandler uncaughtServletExceptionHandler, final Set<Class<? extends HttpServlet>> servletClasses, final Set<? extends HttpServlet> servletInstances, final Set<Class<? extends Filter>> filterClasses, final Set<? extends Filter> filterInstances) {
     final ServletContextHandler context = createServletContextHandler(realm);
     if (servletClasses != null)
       for (final Class<? extends HttpServlet> servletClass : servletClasses)
@@ -243,7 +245,8 @@ public class EmbeddedServletContainer implements AutoCloseable {
       for (final HttpServlet servletInstance : servletInstances)
         addServlet(context, null, servletInstance);
 
-    // FIXME: Without the UncaughtServletExceptionFilter, errors would lead to: net::ERR_INCOMPLETE_CHUNKED_ENCODING
+    // FIXME: Without the UncaughtServletExceptionFilter, errors would lead to:
+    // net::ERR_INCOMPLETE_CHUNKED_ENCODING
     if (uncaughtServletExceptionHandler != null)
       addFilter(context, null, new UncaughtServletExceptionFilter(uncaughtServletExceptionHandler));
 
@@ -294,7 +297,11 @@ public class EmbeddedServletContainer implements AutoCloseable {
     https.addCustomizer(new SecureRequestCustomizer());
 
     final SslContextFactory sslContextFactory = new SslContextFactory.Server();
-    sslContextFactory.setKeyStorePath(Thread.currentThread().getContextClassLoader().getResource(keyStorePath).toExternalForm());
+    final URL resource = Thread.currentThread().getContextClassLoader().getResource(keyStorePath);
+    if (resource == null)
+      throw new IllegalArgumentException("KeyStore path not found: " + keyStorePath);
+
+    sslContextFactory.setKeyStorePath(resource.toString());
     sslContextFactory.setKeyStorePassword(keyStorePassword);
 
     final ServerConnector connector = new ServerConnector(server, new SslConnectionFactory(sslContextFactory, "http/1.1"), new HttpConnectionFactory(https));
@@ -353,8 +360,7 @@ public class EmbeddedServletContainer implements AutoCloseable {
     public final Builder withServletClasses(final Class<? extends HttpServlet> ... servletClasses) {
       if (servletClasses != null) {
         this.servletClasses = new HashSet<>(servletClasses.length);
-        for (final Class<? extends HttpServlet> servletClass : servletClasses)
-          this.servletClasses.add(servletClass);
+        Collections.addAll(this.servletClasses, servletClasses);
       }
       else {
         this.servletClasses = null;
@@ -393,8 +399,7 @@ public class EmbeddedServletContainer implements AutoCloseable {
     public Builder withServletInstances(final HttpServlet ... servletInstances) {
       if (servletInstances != null) {
         this.servletInstances = new HashSet<>(servletInstances.length);
-        for (final HttpServlet servletInstance : servletInstances)
-          this.servletInstances.add(servletInstance);
+        Collections.addAll(this.servletInstances, servletInstances);
       }
       else {
         this.servletInstances = null;
@@ -434,8 +439,7 @@ public class EmbeddedServletContainer implements AutoCloseable {
     public final Builder withFilterClasses(final Class<? extends Filter> ... filterClasses) {
       if (filterClasses != null) {
         this.filterClasses = new HashSet<>(filterClasses.length);
-        for (final Class<? extends Filter> filterClass : filterClasses)
-          this.filterClasses.add(filterClass);
+        Collections.addAll(this.filterClasses, filterClasses);
       }
       else {
         this.filterClasses = null;
@@ -474,8 +478,7 @@ public class EmbeddedServletContainer implements AutoCloseable {
     public Builder withFilterInstances(final Filter ... filterInstances) {
       if (filterInstances != null) {
         this.filterInstances = new HashSet<>(filterInstances.length);
-        for (final Filter filterInstance : filterInstances)
-          this.filterInstances.add(filterInstance);
+        Collections.addAll(this.filterInstances, filterInstances);
       }
       else {
         this.filterInstances = null;
@@ -649,7 +652,9 @@ public class EmbeddedServletContainer implements AutoCloseable {
     this.server = new Server();
 
     final ServletContextHandler context = addAllServlets(realm, uncaughtServletExceptionHandler, servletClasses, servletInstances, filterClasses, filterInstances);
-    server.setConnectors(new Connector[] {makeConnector(server, port, keyStorePath, keyStorePassword)});
+    server.setConnectors(new Connector[] {
+      makeConnector(server, port, keyStorePath, keyStorePassword)
+    });
 
     final HandlerCollection handlers = new HandlerCollection();
     for (final Handler handler : server.getHandlers())
@@ -659,7 +664,11 @@ public class EmbeddedServletContainer implements AutoCloseable {
       // FIXME: HACK: Why cannot I just get the "/" resource? In the IDE it
       // FIXME: works, but in the standalone jar, it does not
       final String resourceName = getClass().getName().replace('.', '/').concat(".class");
-      final String configResourcePath = Thread.currentThread().getContextClassLoader().getResource(resourceName).toExternalForm();
+      final URL resource = Thread.currentThread().getContextClassLoader().getResource(resourceName);
+      if (resource == null)
+        throw new IllegalStateException("Unable to locate bytecode for class " + getClass().getName() + " in class loader " + Thread.currentThread().getContextClassLoader());
+
+      final String configResourcePath = resource.toString();
       final URL rootResourceURL = URLs.create(configResourcePath.substring(0, configResourcePath.length() - resourceName.length()));
 
       final ResourceHandler resourceHandler = new ResourceHandler();
@@ -722,7 +731,7 @@ public class EmbeddedServletContainer implements AutoCloseable {
     server.join();
   }
 
-  private int port = 0;
+  private int port;
 
   /**
    * Returns the actual port the connector is listening on, or -1 if it has not

@@ -20,6 +20,7 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -112,15 +113,15 @@ public class Realm implements Cloneable, Serializable {
         return false;
 
     final Realm that = (Realm)obj;
-    return (name != null ? name.equals(that.name) : that.name == null) && credentials.equals(that.credentials) && roles.equals(that.roles);
+    return Objects.equals(name, that.name) && credentials.equals(that.credentials) && roles.equals(that.roles);
   }
 
   @Override
   public int hashCode() {
     int hashCode = 1;
-    hashCode = 31 * hashCode + (credentials == null ? 0 : credentials.hashCode());
-    hashCode = 31 * hashCode + (roles == null ? 0 : roles.hashCode());
-    hashCode = 31 * hashCode + (name == null ? 0 : name.hashCode());
+    hashCode = 31 * hashCode + credentials.hashCode();
+    hashCode = 31 * hashCode + roles.hashCode();
+    hashCode = 31 * hashCode + Objects.hashCode(name);
     return hashCode;
   }
 }
