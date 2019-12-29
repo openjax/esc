@@ -109,9 +109,10 @@ public class EmbeddedServletContainer implements AutoCloseable {
     return constraint;
   }
 
+  @SuppressWarnings("null")
   private static void addServlet(final ServletContextHandler context, Class<? extends HttpServlet> servletClass, HttpServlet servletInstance) {
     if ((servletClass == null) == (servletInstance == null))
-      throw new IllegalArgumentException("servletClass XOR servletInstance MUST BE not null");
+      throw new IllegalArgumentException("Either servletClass (" + servletClass + ") XOR servletInstance (" + servletInstance + ") can be provided, not neither and not both");
 
     if (servletClass == null)
       servletClass = servletInstance.getClass();
@@ -175,6 +176,7 @@ public class EmbeddedServletContainer implements AutoCloseable {
     }
   }
 
+  @SuppressWarnings("null")
   private static void addFilter(final ServletContextHandler context, Class<? extends Filter> filterClass, final Filter filterInstance) {
     if ((filterClass == null) == (filterInstance == null))
       throw new IllegalArgumentException("filterClass XOR filterInstance MUST BE not null");
