@@ -132,7 +132,7 @@ public class EmbeddedServletContainer implements AutoCloseable {
         servletInstance = servletClass.getDeclaredConstructor().newInstance();
       }
       catch (final IllegalAccessException | InstantiationException | InvocationTargetException | NoSuchMethodException e) {
-        logger.warn(e.getMessage());
+        logger.warn(e instanceof InvocationTargetException ? e.getCause().getMessage() : e.getMessage());
         return;
       }
     }
