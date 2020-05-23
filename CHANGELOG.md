@@ -1,6 +1,8 @@
 # Changes by Version
 
-## [v9.4.19](https://github.com/openjax/jetty/compare/35ef3e3c7e5d48a7f2b268c5fa46228fd4537b44..HEAD) (2020-05-23)
+## [v9.4.28-SNAPSHOT](https://github.com/openjax/jetty/compare/736425ef94833c6643344feb33167811c1cef068..HEAD)
+
+## [v9.4.19](https://github.com/openjax/jetty/compare/35ef3e3c7e5d48a7f2b268c5fa46228fd4537b44..736425ef94833c6643344feb33167811c1cef068) (2020-05-23)
 * Reduce visibility of `UncaughtServletExceptionFilter`.
 * Improve tests.
 * Improve javadocs.
