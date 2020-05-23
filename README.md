@@ -32,7 +32,7 @@ OpenJAX Jetty is intended to reduce the number of lines of code dedicated to the
    <dependency>
      <groupId>org.openjax</groupId>
      <artifactId>jetty</artifactId>
-     <version>9.4.16</version>
+     <version>9.4.19</version>
    </dependency>
    ```
 
