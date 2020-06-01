@@ -194,8 +194,7 @@ public class EmbeddedServletContainer implements AutoCloseable {
       return;
     }
 
-    // FIXME: Is it supposed to be EnumSet.noneOf(DispatcherType.class)??? in
-    // the addFilter call
+    // FIXME: Is it supposed to be EnumSet.noneOf(DispatcherType.class)??? in the addFilter call
     logger.info(filterClass.getName() + " " + Arrays.toString(webFilter.urlPatterns()));
     if (filterInstance != null) {
       final Map<String,String> initParams = new HashMap<>();
@@ -247,8 +246,7 @@ public class EmbeddedServletContainer implements AutoCloseable {
       for (final HttpServlet servletInstance : servletInstances)
         addServlet(context, null, servletInstance);
 
-    // FIXME: Without the UncaughtServletExceptionFilter, errors would lead to:
-    // net::ERR_INCOMPLETE_CHUNKED_ENCODING
+    // FIXME: Without the UncaughtServletExceptionFilter, errors would lead to: net::ERR_INCOMPLETE_CHUNKED_ENCODING
     if (uncaughtServletExceptionHandler != null)
       addFilter(context, null, new UncaughtServletExceptionFilter(uncaughtServletExceptionHandler));
 
@@ -663,12 +661,8 @@ public class EmbeddedServletContainer implements AutoCloseable {
       handlers.addHandler(handler);
 
     if (externalResourcesAccess) {
-      // FIXME: HACK: Why cannot I just get the "/" resource? In the IDE it
-      // FIXME: works, but in the standalone jar, it does not
       final String resourceName = getClass().getName().replace('.', '/').concat(".class");
-      final URL resource = Thread.currentThread().getContextClassLoader().getResource(resourceName);
-      if (resource == null)
-        throw new IllegalStateException("Unable to locate bytecode for class " + getClass().getName() + " in class loader " + Thread.currentThread().getContextClassLoader());
+      final URL resource = getClass().getClassLoader().getResource(resourceName);
 
       final String configResourcePath = resource.toString();
       final URL rootResourceURL = URLs.create(configResourcePath.substring(0, configResourcePath.length() - resourceName.length()));
