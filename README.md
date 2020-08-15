@@ -1,9 +1,9 @@
 # Jetty
 
-[![Build Status](https://travis-ci.org/openjax/jetty.svg?1)](https://travis-ci.org/openjax/jetty)
-[![Coverage Status](https://coveralls.io/repos/github/openjax/jetty/badge.svg?1)](https://coveralls.io/github/openjax/jetty)
-[![Javadocs](https://www.javadoc.io/badge/org.openjax/jetty.svg?1)](https://www.javadoc.io/doc/org.openjax/jetty)
-[![Released Version](https://img.shields.io/maven-central/v/org.openjax/jetty.svg?1)](https://mvnrepository.com/artifact/org.openjax/jetty)
+[![Build Status](https://travis-ci.org/openjax/jetty.svg?branch=master)](https://travis-ci.org/openjax/jetty)
+[![Coverage Status](https://coveralls.io/repos/github/openjax/jetty/badge.svg)](https://coveralls.io/github/openjax/jetty)
+[![Javadocs](https://www.javadoc.io/badge/org.openjax/jetty.svg)](https://www.javadoc.io/doc/org.openjax/jetty)
+[![Released Version](https://img.shields.io/maven-central/v/org.openjax/jetty.svg)](https://mvnrepository.com/artifact/org.openjax/jetty)
 ![Snapshot Version](https://img.shields.io/nexus/s/org.openjax/jetty?label=maven-snapshot&server=https%3A%2F%2Foss.sonatype.org)
 
 ## Introduction
