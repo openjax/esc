@@ -1,6 +1,6 @@
 # Jetty
 
-[![Build Status](https://travis-ic.org/openjax/jetty.svg?branch=master)](https://travis-ic.org/openjax/jetty)
+[![Build Status](https://github.com/openjax/jetty/workflows/build.yml/badge.svg)](https://github.com/openjax/jetty/actions/workflows/build.yml)
 [![Coverage Status](https://coveralls.io/repos/github/openjax/jetty/badge.svg)](https://coveralls.io/github/openjax/jetty)
 [![Javadocs](https://www.javadoc.io/badge/org.openjax/jetty.svg)](https://www.javadoc.io/doc/org.openjax/jetty)
 [![Released Version](https://img.shields.io/maven-central/v/org.openjax/jetty.svg)](https://mvnrepository.com/artifact/org.openjax/jetty)
