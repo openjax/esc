@@ -17,6 +17,7 @@
 package org.openjax.jetty;
 
 import java.io.IOException;
+import java.util.Objects;
 
 import javax.servlet.DispatcherType;
 import javax.servlet.Filter;
@@ -32,7 +33,7 @@ class UncaughtServletExceptionFilter implements Filter {
   private final UncaughtServletExceptionHandler uncaughtServletExceptionHandler;
 
   UncaughtServletExceptionFilter(final UncaughtServletExceptionHandler uncaughtServletExceptionHandler) {
-    this.uncaughtServletExceptionHandler = uncaughtServletExceptionHandler;
+    this.uncaughtServletExceptionHandler = Objects.requireNonNull(uncaughtServletExceptionHandler);
   }
 
   @Override
@@ -45,9 +46,6 @@ class UncaughtServletExceptionFilter implements Filter {
       chain.doFilter(request, response);
     }
     catch (final Exception e1) {
-      if (uncaughtServletExceptionHandler == null)
-        throw e1;
-
       try {
         uncaughtServletExceptionHandler.uncaughtServletException(request, response, e1);
       }

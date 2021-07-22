@@ -246,7 +246,6 @@ public class EmbeddedServletContainer implements AutoCloseable {
       for (final HttpServlet servletInstance : servletInstances)
         addServlet(context, null, servletInstance);
 
-    // FIXME: Without the UncaughtServletExceptionFilter, errors would lead to: net::ERR_INCOMPLETE_CHUNKED_ENCODING
     if (uncaughtServletExceptionHandler != null)
       addFilter(context, null, new UncaughtServletExceptionFilter(uncaughtServletExceptionHandler));
 
