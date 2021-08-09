@@ -63,6 +63,7 @@ import org.eclipse.jetty.util.resource.Resource;
 import org.eclipse.jetty.util.security.Constraint;
 import org.eclipse.jetty.util.security.Credential;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
+import org.libj.lang.Assertions;
 import org.libj.lang.PackageLoader;
 import org.libj.lang.PackageNotFoundException;
 import org.libj.net.URLs;
@@ -236,8 +237,7 @@ public class EmbeddedServletContainer implements AutoCloseable {
   }
 
   @SuppressWarnings("unchecked")
-  private static ServletContextHandler addAllServlets(final Realm realm, final UncaughtServletExceptionHandler uncaughtServletExceptionHandler, final Set<Class<? extends HttpServlet>> servletClasses, final Set<? extends HttpServlet> servletInstances, final Set<Class<? extends Filter>> filterClasses, final Set<? extends Filter> filterInstances) {
-    final ServletContextHandler context = createServletContextHandler(realm);
+  private static void addAllServlets(final ServletContextHandler context, final UncaughtServletExceptionHandler uncaughtServletExceptionHandler, final Set<Class<? extends HttpServlet>> servletClasses, final Set<? extends HttpServlet> servletInstances, final Set<Class<? extends Filter>> filterClasses, final Set<? extends Filter> filterInstances) {
     if (servletClasses != null)
       for (final Class<? extends HttpServlet> servletClass : servletClasses)
         addServlet(context, servletClass, null);
@@ -281,8 +281,6 @@ public class EmbeddedServletContainer implements AutoCloseable {
         }
       }
     }
-
-    return context;
   }
 
   private static ServerConnector makeConnector(final Server server, final int port, final String keyStorePath, final String keyStorePassword) {
@@ -296,10 +294,7 @@ public class EmbeddedServletContainer implements AutoCloseable {
     https.addCustomizer(new SecureRequestCustomizer());
 
     final SslContextFactory sslContextFactory = new SslContextFactory.Server();
-    final URL resource = Thread.currentThread().getContextClassLoader().getResource(keyStorePath);
-    if (resource == null)
-      throw new IllegalArgumentException("KeyStore path not found: " + keyStorePath);
-
+    final URL resource = Assertions.assertNotNull(Thread.currentThread().getContextClassLoader().getResource(keyStorePath), "KeyStore path not found: " + keyStorePath);
     sslContextFactory.setKeyStorePath(resource.toString());
     sslContextFactory.setKeyStorePassword(keyStorePassword);
 
@@ -325,6 +320,26 @@ public class EmbeddedServletContainer implements AutoCloseable {
         throw new IllegalArgumentException("Port (" + port + ") must be between 0 and 65535");
 
       this.port = port;
+      return this;
+    }
+
+    private String contextPath = "/";
+
+    /**
+     * Returns the builder instance.
+     *
+     * @param contextPath The prefix portion of request URIs to be matched for
+     *          handling by the container. If the provided {@code contextPath}
+     *          does not start with {@code "/"}, one will be prepended. If the
+     *          provided {@code contextPath} ends with {@code "/*"} or
+     *          {@code "/"}, this will be removed.
+     * @return The builder instance.
+     * @throws IllegalArgumentException If {@code contextPath} is null.
+     */
+    public Builder withContextPath(final String contextPath) {
+      Assertions.assertNotNull(contextPath, "null contextPath");
+
+      this.contextPath = contextPath;
       return this;
     }
 
@@ -551,7 +566,7 @@ public class EmbeddedServletContainer implements AutoCloseable {
      *         this builder instance.
      */
     public EmbeddedServletContainer build() {
-      return new EmbeddedServletContainer(port, keyStorePath, keyStorePassword, externalResourcesAccess, realm, uncaughtServletExceptionHandler, servletClasses, servletInstances, filterClasses, filterInstances);
+      return new EmbeddedServletContainer(port, contextPath, keyStorePath, keyStorePassword, externalResourcesAccess, realm, uncaughtServletExceptionHandler, servletClasses, servletInstances, filterClasses, filterInstances);
     }
   }
 
@@ -570,7 +585,7 @@ public class EmbeddedServletContainer implements AutoCloseable {
    * @throws IllegalArgumentException If port is not between 0 and 65535.
    */
   public EmbeddedServletContainer(final int port, final UncaughtServletExceptionHandler uncaughtServletExceptionHandler) {
-    this(port, null, null, false, null, uncaughtServletExceptionHandler, null, null, null, null);
+    this(port, "/", null, null, false, null, uncaughtServletExceptionHandler, null, null, null, null);
   }
 
   /**
@@ -605,7 +620,7 @@ public class EmbeddedServletContainer implements AutoCloseable {
    * @throws IllegalArgumentException If port is not between 0 and 65535.
    */
   public EmbeddedServletContainer(final int port, final UncaughtServletExceptionHandler uncaughtServletExceptionHandler, final Set<Class<? extends HttpServlet>> servletClasses, final Set<HttpServlet> servletInstances, final Set<Class<? extends Filter>> filterClasses, final Set<Filter> filterInstances) {
-    this(port, null, null, false, null, uncaughtServletExceptionHandler, servletClasses, servletInstances, filterClasses, filterInstances);
+    this(port, "/", null, null, false, null, uncaughtServletExceptionHandler, servletClasses, servletInstances, filterClasses, filterInstances);
   }
 
   /**
@@ -615,6 +630,11 @@ public class EmbeddedServletContainer implements AutoCloseable {
    * @param port The listen port, which must be between 0 and 65535. A value of
    *          0 advises Jetty to set a random port that is available. The port
    *          can thereafter be determined with {@link #getPort()}.
+   * @param contextPath The prefix portion of request URIs to be matched for
+   *          handling by the container. If the provided {@code contextPath}
+   *          does not start with {@code "/"}, one will be prepended. If the
+   *          provided {@code contextPath} ends with {@code "/*"} or
+   *          {@code "/"}, this will be removed.
    * @param keyStorePath The path of the SSL keystore.
    * @param keyStorePassword The password for the key store.
    * @param externalResourcesAccess Whether the server should provide directory
@@ -642,18 +662,19 @@ public class EmbeddedServletContainer implements AutoCloseable {
    *          {@code filterInstances} set is null, the
    *          {@link EmbeddedServletContainer} will scan candidate packages for
    *          {@link Filter} classes to load automatically.
-   * @throws IllegalArgumentException If port is not between 0 and 65535.
+   * @throws IllegalArgumentException If port is not between 0 and 65535, or if
+   *           {@code contextPath} is null.
    */
-  public EmbeddedServletContainer(final int port, final String keyStorePath, final String keyStorePassword, final boolean externalResourcesAccess, final Realm realm, final UncaughtServletExceptionHandler uncaughtServletExceptionHandler, final Set<Class<? extends HttpServlet>> servletClasses, final Set<HttpServlet> servletInstances, final Set<Class<? extends Filter>> filterClasses, final Set<Filter> filterInstances) {
+  public EmbeddedServletContainer(final int port, final String contextPath, final String keyStorePath, final String keyStorePassword, final boolean externalResourcesAccess, final Realm realm, final UncaughtServletExceptionHandler uncaughtServletExceptionHandler, final Set<Class<? extends HttpServlet>> servletClasses, final Set<HttpServlet> servletInstances, final Set<Class<? extends Filter>> filterClasses, final Set<Filter> filterInstances) {
     if (port < 0 || 65535 < port)
       throw new IllegalArgumentException("Port (" + port + ") must be between 0 and 65535");
 
     this.server = new Server();
 
-    final ServletContextHandler context = addAllServlets(realm, uncaughtServletExceptionHandler, servletClasses, servletInstances, filterClasses, filterInstances);
-    server.setConnectors(new Connector[] {
-      makeConnector(server, port, keyStorePath, keyStorePassword)
-    });
+    final ServletContextHandler context = createServletContextHandler(realm);
+    context.setContextPath(contextPath);
+    addAllServlets(context, uncaughtServletExceptionHandler, servletClasses, servletInstances, filterClasses, filterInstances);
+    server.setConnectors(new Connector[] {makeConnector(server, port, keyStorePath, keyStorePassword)});
 
     final HandlerCollection handlers = new HandlerCollection();
     for (final Handler handler : server.getHandlers())
@@ -690,7 +711,7 @@ public class EmbeddedServletContainer implements AutoCloseable {
    * @param builder The {@link Builder}.
    */
   public EmbeddedServletContainer(final EmbeddedServletContainer.Builder builder) {
-    this(builder.port, builder.keyStorePath, builder.keyStorePassword, builder.externalResourcesAccess, builder.realm, builder.uncaughtServletExceptionHandler, builder.servletClasses, builder.servletInstances, builder.filterClasses, builder.filterInstances);
+    this(builder.port, builder.contextPath, builder.keyStorePath, builder.keyStorePassword, builder.externalResourcesAccess, builder.realm, builder.uncaughtServletExceptionHandler, builder.servletClasses, builder.servletInstances, builder.filterClasses, builder.filterInstances);
   }
 
   /**
