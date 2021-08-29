@@ -294,7 +294,7 @@ public class EmbeddedServletContainer implements AutoCloseable {
     https.addCustomizer(new SecureRequestCustomizer());
 
     final SslContextFactory sslContextFactory = new SslContextFactory.Server();
-    final URL resource = Assertions.assertNotNull(Thread.currentThread().getContextClassLoader().getResource(keyStorePath), "KeyStore path not found: " + keyStorePath);
+    final URL resource = Assertions.assertNotNull(Thread.currentThread().getContextClassLoader().getResource(keyStorePath), "KeyStore path not found: %s", keyStorePath);
     sslContextFactory.setKeyStorePath(resource.toString());
     sslContextFactory.setKeyStorePassword(keyStorePassword);
 
