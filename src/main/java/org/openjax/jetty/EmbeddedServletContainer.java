@@ -16,6 +16,8 @@
 
 package org.openjax.jetty;
 
+import static org.libj.lang.Assertions.*;
+
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
@@ -63,7 +65,6 @@ import org.eclipse.jetty.util.resource.Resource;
 import org.eclipse.jetty.util.security.Constraint;
 import org.eclipse.jetty.util.security.Credential;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
-import org.libj.lang.Assertions;
 import org.libj.lang.PackageLoader;
 import org.libj.lang.PackageNotFoundException;
 import org.libj.net.URLs;
@@ -294,7 +295,7 @@ public class EmbeddedServletContainer implements AutoCloseable {
     https.addCustomizer(new SecureRequestCustomizer());
 
     final SslContextFactory sslContextFactory = new SslContextFactory.Server();
-    final URL resource = Assertions.assertNotNull(Thread.currentThread().getContextClassLoader().getResource(keyStorePath), "KeyStore path not found: %s", keyStorePath);
+    final URL resource = assertNotNull(Thread.currentThread().getContextClassLoader().getResource(keyStorePath), "KeyStore path not found: %s", keyStorePath);
     sslContextFactory.setKeyStorePath(resource.toString());
     sslContextFactory.setKeyStorePassword(keyStorePassword);
 
@@ -337,7 +338,7 @@ public class EmbeddedServletContainer implements AutoCloseable {
      * @throws IllegalArgumentException If {@code contextPath} is null.
      */
     public Builder withContextPath(final String contextPath) {
-      Assertions.assertNotNull(contextPath, "null contextPath");
+      assertNotNull(contextPath, "null contextPath");
 
       this.contextPath = contextPath;
       return this;

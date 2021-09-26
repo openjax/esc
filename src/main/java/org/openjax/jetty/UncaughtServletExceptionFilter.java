@@ -16,6 +16,8 @@
 
 package org.openjax.jetty;
 
+import static org.libj.lang.Assertions.*;
+
 import java.io.IOException;
 
 import javax.servlet.DispatcherType;
@@ -27,14 +29,12 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.annotation.WebFilter;
 
-import org.libj.lang.Assertions;
-
 @WebFilter(filterName="UncaughtServletExceptionFilter", urlPatterns="/*", dispatcherTypes=DispatcherType.REQUEST)
 class UncaughtServletExceptionFilter implements Filter {
   private final UncaughtServletExceptionHandler uncaughtServletExceptionHandler;
 
   UncaughtServletExceptionFilter(final UncaughtServletExceptionHandler uncaughtServletExceptionHandler) {
-    this.uncaughtServletExceptionHandler = Assertions.assertNotNull(uncaughtServletExceptionHandler);
+    this.uncaughtServletExceptionHandler = assertNotNull(uncaughtServletExceptionHandler);
   }
 
   @Override
