@@ -27,8 +27,6 @@ import java.util.Set;
  * A named realm of roles and credentials.
  */
 public class Realm implements Cloneable, Serializable {
-  private static final long serialVersionUID = 5903086620776103606L;
-
   private final Map<String,String> credentials = new HashMap<>();
   private final Set<String> roles = new HashSet<>();
   private final String name;
@@ -59,7 +57,7 @@ public class Realm implements Cloneable, Serializable {
    * @return The name of the realm.
    */
   public String getName() {
-    return this.name;
+    return name;
   }
 
   /**
@@ -68,7 +66,7 @@ public class Realm implements Cloneable, Serializable {
    * @param role The role.
    */
   public void addRole(final String role) {
-    this.roles.add(role);
+    roles.add(role);
   }
 
   /**
@@ -87,7 +85,7 @@ public class Realm implements Cloneable, Serializable {
    * @param password The password.
    */
   public void addCredential(final String username, final String password) {
-    this.credentials.put(username, password);
+    credentials.put(username, password);
   }
 
   /**
@@ -96,7 +94,7 @@ public class Realm implements Cloneable, Serializable {
    * @return The credentials of this {@code Realm}.
    */
   public Map<String,String> getCredentials() {
-    return this.credentials;
+    return credentials;
   }
 
   @Override
