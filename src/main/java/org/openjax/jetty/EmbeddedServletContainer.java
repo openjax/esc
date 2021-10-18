@@ -19,6 +19,7 @@ package org.openjax.jetty;
 import static org.libj.lang.Assertions.*;
 
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 import java.net.URL;
@@ -39,13 +40,16 @@ import javax.servlet.annotation.WebInitParam;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 
+import org.eclipse.jetty.alpn.server.ALPNServerConnectionFactory;
+import org.eclipse.jetty.http2.server.HTTP2CServerConnectionFactory;
+import org.eclipse.jetty.http2.server.HTTP2ServerConnectionFactory;
+import org.eclipse.jetty.jmx.MBeanContainer;
 import org.eclipse.jetty.security.ConstraintMapping;
 import org.eclipse.jetty.security.ConstraintSecurityHandler;
 import org.eclipse.jetty.security.HashLoginService;
 import org.eclipse.jetty.security.SecurityHandler;
 import org.eclipse.jetty.security.UserStore;
 import org.eclipse.jetty.security.authentication.BasicAuthenticator;
-import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.CustomRequestLog;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.HttpConfiguration;
@@ -284,24 +288,52 @@ public class EmbeddedServletContainer implements AutoCloseable {
     }
   }
 
-  private static ServerConnector makeConnector(final Server server, final int port, final String keyStorePath, final String keyStorePassword) {
-    if (keyStorePath == null || keyStorePassword == null) {
-      final ServerConnector connector = new ServerConnector(server);
-      connector.setPort(port);
-      return connector;
+  // FIXME: Allow both http and https connectors to coexist
+
+  @SuppressWarnings("resource")
+  private static void addConnectors(final Server server, final int port, final boolean isHttp2, final String keyStorePath, final String keyStorePassword) {
+    server.addBean(new MBeanContainer(ManagementFactory.getPlatformMBeanServer()));
+
+    final HttpConfiguration httpConfig = new HttpConfiguration();
+
+    final ServerConnector httpConnector, httpsConnector;
+    if (isHttp2) {
+      httpConnector = new ServerConnector(server, new HttpConnectionFactory(httpConfig), new HTTP2CServerConnectionFactory(httpConfig));
+    }
+    else {
+      httpConnector = new ServerConnector(server, new HttpConnectionFactory(httpConfig));
     }
 
-    final HttpConfiguration https = new HttpConfiguration();
-    https.addCustomizer(new SecureRequestCustomizer());
+    if (keyStorePath == null || keyStorePassword == null) {
+      httpConnector.setPort(port);
+      server.setConnectors(new ServerConnector[] { httpConnector });
+      return;
+    }
+
+    final HttpConfiguration httpsConfig = new HttpConfiguration(httpConfig);
+    httpsConfig.addCustomizer(new SecureRequestCustomizer());
 
     final SslContextFactory sslContextFactory = new SslContextFactory.Server();
+    httpsConfig.addCustomizer(new SecureRequestCustomizer());
+
     final URL resource = assertNotNull(Thread.currentThread().getContextClassLoader().getResource(keyStorePath), "KeyStore path not found: %s", keyStorePath);
     sslContextFactory.setKeyStorePath(resource.toString());
     sslContextFactory.setKeyStorePassword(keyStorePassword);
 
-    final ServerConnector connector = new ServerConnector(server, new SslConnectionFactory(sslContextFactory, "http/1.1"), new HttpConnectionFactory(https));
-    connector.setPort(port);
-    return connector;
+    final ALPNServerConnectionFactory alpnConnectionFactory = new ALPNServerConnectionFactory(httpConnector.getDefaultProtocol());
+    final HttpConnectionFactory httpConnectionFactory = new HttpConnectionFactory(httpsConfig);
+    final SslConnectionFactory sslConnectionFactory = new SslConnectionFactory(sslContextFactory, alpnConnectionFactory.getProtocol());
+
+    if (isHttp2) {
+      httpsConnector = new ServerConnector(server, sslConnectionFactory, alpnConnectionFactory, new HTTP2ServerConnectionFactory(httpsConfig), httpConnectionFactory);
+    }
+    else {
+      // Here alpnConnectionFactory.getProtocol() should be "http/1.1"
+      httpsConnector = new ServerConnector(server, sslConnectionFactory, alpnConnectionFactory, httpConnectionFactory);
+    }
+
+    httpsConnector.setPort(port);
+    server.setConnectors(new ServerConnector[] { httpsConnector });
   }
 
   public static class Builder {
@@ -675,7 +707,8 @@ public class EmbeddedServletContainer implements AutoCloseable {
     final ServletContextHandler context = createServletContextHandler(realm);
     context.setContextPath(contextPath);
     addAllServlets(context, uncaughtServletExceptionHandler, servletClasses, servletInstances, filterClasses, filterInstances);
-    server.setConnectors(new Connector[] {makeConnector(server, port, keyStorePath, keyStorePassword)});
+    // FIXME: Make isHttp2 a parameterized config
+    addConnectors(server, port, true, keyStorePath, keyStorePassword);
 
     final HandlerCollection handlers = new HandlerCollection();
     for (final Handler handler : server.getHandlers())
