@@ -25,13 +25,13 @@
     <version>2.5.6-SNAPSHOT</version>
   </parent>
   <artifactId>jetty</artifactId>
-  <version>9.4.42-SNAPSHOT</version>
+  <version>9.4.44-SNAPSHOT</version>
   <name>OpenJAX Jetty</name>
   <description>
     Embedded wrapper of the "Jetty Servlet Container".
   </description>
   <properties>
-    <version.jetty>9.4.42.v20210604</version.jetty>
+    <version.jetty>9.4.44.v20210927</version.jetty>
   </properties>
   <build>
     <plugins>
