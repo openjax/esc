@@ -88,7 +88,7 @@ public class EmbeddedServletContainer implements AutoCloseable {
   private static final String[] excludePackageStartsWith = {"jdk", "java", "javax", "com.sun", "sun", "org.w3c", "org.xml", "org.jvnet", "org.joda", "org.jcp", "apple.security"};
 
   private static boolean acceptPackage(final Package pkg) {
-    for (int i = 0; i < excludePackageStartsWith.length; ++i)
+    for (int i = 0; i < excludePackageStartsWith.length; ++i) // [A]
       if (pkg.getName().startsWith(excludePackageStartsWith[i] + "."))
         return false;
 
@@ -150,14 +150,14 @@ public class EmbeddedServletContainer implements AutoCloseable {
     }
 
     final Map<String,String> initParams = new HashMap<>();
-    for (final WebInitParam webInitParam : webServlet.initParams())
+    for (final WebInitParam webInitParam : webServlet.initParams()) // [A]
       initParams.put(webInitParam.name(), webInitParam.value());
 
     final String servletName = webServlet.name().length() > 0 ? webServlet.name() : servletClass.getName();
     final ServletSecurity servletSecurity = servletClass.getAnnotation(ServletSecurity.class);
     if (servletSecurity != null && servletSecurity.value().rolesAllowed().length > 0) {
-      for (final String urlPattern : urlPatterns) {
-        for (final String role : servletSecurity.value().rolesAllowed()) {
+      for (final String urlPattern : urlPatterns) { // [A]
+        for (final String role : servletSecurity.value().rolesAllowed()) { // [A]
           final ConstraintMapping constraintMapping = new ConstraintMapping();
           constraintMapping.setConstraint(getBasicAuthConstraint(Constraint.__BASIC_AUTH, role));
           constraintMapping.setPathSpec(urlPattern);
@@ -173,7 +173,7 @@ public class EmbeddedServletContainer implements AutoCloseable {
     }
 
     logger.info(servletClass.getName() + " " + Arrays.toString(urlPatterns));
-    for (final String urlPattern : urlPatterns) {
+    for (final String urlPattern : urlPatterns) { // [A]
       final ServletHolder servletHolder = new ServletHolder(servletInstance);
       servletHolder.setName(servletName);
       servletHolder.getRegistration().setInitParameters(initParams);
@@ -204,18 +204,18 @@ public class EmbeddedServletContainer implements AutoCloseable {
     logger.info(filterClass.getName() + " " + Arrays.toString(webFilter.urlPatterns()));
     if (filterInstance != null) {
       final Map<String,String> initParams = new HashMap<>();
-      for (final WebInitParam webInitParam : webFilter.initParams())
+      for (final WebInitParam webInitParam : webFilter.initParams()) // [A]
         initParams.put(webInitParam.name(), webInitParam.value());
 
       final FilterHolder filterHolder = new FilterHolder(filterInstance);
       filterHolder.setName(webFilter.filterName().length() > 0 ? webFilter.filterName() : filterClass.getName());
       filterHolder.getRegistration().setInitParameters(initParams);
-      for (final String urlPattern : webFilter.urlPatterns()) {
+      for (final String urlPattern : webFilter.urlPatterns()) { // [A]
         context.addFilter(filterHolder, urlPattern, webFilter.dispatcherTypes().length > 0 ? EnumSet.of(webFilter.dispatcherTypes()[0], webFilter.dispatcherTypes()) : EnumSet.noneOf(DispatcherType.class));
       }
     }
     else {
-      for (final String urlPattern : webFilter.urlPatterns()) {
+      for (final String urlPattern : webFilter.urlPatterns()) { // [A]
         context.addFilter(filterClass, urlPattern, webFilter.dispatcherTypes().length > 0 ? EnumSet.of(webFilter.dispatcherTypes()[0], webFilter.dispatcherTypes()) : EnumSet.noneOf(DispatcherType.class));
       }
     }
@@ -227,8 +227,8 @@ public class EmbeddedServletContainer implements AutoCloseable {
       final ConstraintSecurityHandler securityHandler = new ConstraintSecurityHandler();
       final HashLoginService login = new HashLoginService(realm.getName());
       final UserStore userStore = new UserStore();
-      for (final Map.Entry<String,String> entry : realm.getCredentials().entrySet())
-        for (final String role : realm.getRoles())
+      for (final Map.Entry<String,String> entry : realm.getCredentials().entrySet()) // [S]
+        for (final String role : realm.getRoles()) // [S]
           userStore.addUser(entry.getKey(), Credential.getCredential(entry.getValue()), new String[] {role});
 
       login.setUserStore(userStore);
@@ -244,28 +244,28 @@ public class EmbeddedServletContainer implements AutoCloseable {
   @SuppressWarnings("unchecked")
   private static void addAllServlets(final ServletContextHandler context, final UncaughtServletExceptionHandler uncaughtServletExceptionHandler, final Set<Class<? extends HttpServlet>> servletClasses, final Set<? extends HttpServlet> servletInstances, final Set<Class<? extends Filter>> filterClasses, final Set<? extends Filter> filterInstances) {
     if (servletClasses != null)
-      for (final Class<? extends HttpServlet> servletClass : servletClasses)
+      for (final Class<? extends HttpServlet> servletClass : servletClasses) // [S]
         addServlet(context, servletClass, null);
 
     if (servletInstances != null)
-      for (final HttpServlet servletInstance : servletInstances)
+      for (final HttpServlet servletInstance : servletInstances) // [S]
         addServlet(context, null, servletInstance);
 
     if (uncaughtServletExceptionHandler != null)
       addFilter(context, null, new UncaughtServletExceptionFilter(uncaughtServletExceptionHandler));
 
     if (filterClasses != null)
-      for (final Class<? extends Filter> filterClass : filterClasses)
+      for (final Class<? extends Filter> filterClass : filterClasses) // [S]
         addFilter(context, filterClass, null);
 
     if (filterInstances != null)
-      for (final Filter filterInstance : filterInstances)
+      for (final Filter filterInstance : filterInstances) // [S]
         addFilter(context, null, filterInstance);
 
     final boolean scanServlets = servletClasses == null && servletInstances == null;
     final boolean scanFilters = filterClasses == null && filterInstances == null;
     if (scanServlets || scanFilters) {
-      for (final Package pkg : Package.getPackages()) {
+      for (final Package pkg : Package.getPackages()) { // [A]
         if (acceptPackage(pkg)) {
           try {
             PackageLoader.getContextPackageLoader().loadPackage(pkg, t -> {
@@ -711,7 +711,7 @@ public class EmbeddedServletContainer implements AutoCloseable {
     addConnectors(server, port, true, keyStorePath, keyStorePassword);
 
     final HandlerCollection handlers = new HandlerCollection();
-    for (final Handler handler : server.getHandlers())
+    for (final Handler handler : server.getHandlers()) // [A]
       handlers.addHandler(handler);
 
     if (externalResourcesAccess) {
