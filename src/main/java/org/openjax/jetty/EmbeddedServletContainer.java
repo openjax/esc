@@ -88,7 +88,7 @@ public class EmbeddedServletContainer implements AutoCloseable {
   private static final String[] excludePackageStartsWith = {"jdk", "java", "javax", "com.sun", "sun", "org.w3c", "org.xml", "org.jvnet", "org.joda", "org.jcp", "apple.security"};
 
   private static boolean acceptPackage(final Package pkg) {
-    for (int i = 0; i < excludePackageStartsWith.length; ++i) // [A]
+    for (int i = 0, i$ = excludePackageStartsWith.length; i < i$; ++i) // [A]
       if (pkg.getName().startsWith(excludePackageStartsWith[i] + "."))
         return false;
 
