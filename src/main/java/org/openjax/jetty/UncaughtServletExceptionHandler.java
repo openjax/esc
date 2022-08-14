@@ -25,8 +25,7 @@ import javax.servlet.ServletResponse;
 @FunctionalInterface
 public interface UncaughtServletExceptionHandler {
   /**
-   * Called by the servlet container in the event of an uncaught servlet
-   * exception.
+   * Called by the servlet container in the event of an uncaught servlet exception.
    *
    * @param request The {@link ServletRequest} associated with the exception.
    * @param response The {@link ServletResponse} associated with the exception.
