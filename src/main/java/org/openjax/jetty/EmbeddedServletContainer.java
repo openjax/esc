@@ -226,9 +226,14 @@ public class EmbeddedServletContainer implements AutoCloseable {
       final ConstraintSecurityHandler securityHandler = new ConstraintSecurityHandler();
       final HashLoginService login = new HashLoginService(realm.getName());
       final UserStore userStore = new UserStore();
-      for (final Map.Entry<String,String> entry : realm.getCredentials().entrySet()) // [S]
-        for (final String role : realm.getRoles()) // [S]
-          userStore.addUser(entry.getKey(), Credential.getCredential(entry.getValue()), new String[] {role});
+      final Map<String,String> credentials = realm.getCredentials();
+      if (credentials.size() > 0)
+        for (final Map.Entry<String,String> entry : credentials.entrySet()) {
+          final Set<String> roles = realm.getRoles();
+          if (roles.size() > 0)
+            for (final String role : roles) // [S]
+              userStore.addUser(entry.getKey(), Credential.getCredential(entry.getValue()), new String[] {role});
+        }
 
       login.setUserStore(userStore);
       securityHandler.setRealmName(realm.getName());
@@ -242,22 +247,22 @@ public class EmbeddedServletContainer implements AutoCloseable {
 
   @SuppressWarnings("unchecked")
   private static void addAllServlets(final ServletContextHandler context, final UncaughtServletExceptionHandler uncaughtServletExceptionHandler, final Set<Class<? extends HttpServlet>> servletClasses, final Set<? extends HttpServlet> servletInstances, final Set<Class<? extends Filter>> filterClasses, final Set<? extends Filter> filterInstances) {
-    if (servletClasses != null)
+    if (servletClasses != null && servletClasses.size() > 0)
       for (final Class<? extends HttpServlet> servletClass : servletClasses) // [S]
         addServlet(context, servletClass, null);
 
-    if (servletInstances != null)
+    if (servletInstances != null && servletInstances.size() > 0)
       for (final HttpServlet servletInstance : servletInstances) // [S]
         addServlet(context, null, servletInstance);
 
     if (uncaughtServletExceptionHandler != null)
       addFilter(context, null, new UncaughtServletExceptionFilter(uncaughtServletExceptionHandler));
 
-    if (filterClasses != null)
+    if (filterClasses != null && filterClasses.size() > 0)
       for (final Class<? extends Filter> filterClass : filterClasses) // [S]
         addFilter(context, filterClass, null);
 
-    if (filterInstances != null)
+    if (filterInstances != null && filterInstances.size() > 0)
       for (final Filter filterInstance : filterInstances) // [S]
         addFilter(context, null, filterInstance);
 
