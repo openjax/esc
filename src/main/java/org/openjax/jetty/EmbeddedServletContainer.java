@@ -51,7 +51,6 @@ import org.eclipse.jetty.security.SecurityHandler;
 import org.eclipse.jetty.security.UserStore;
 import org.eclipse.jetty.security.authentication.BasicAuthenticator;
 import org.eclipse.jetty.server.CustomRequestLog;
-import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.NetworkConnector;
@@ -62,6 +61,7 @@ import org.eclipse.jetty.server.Slf4jRequestLogWriter;
 import org.eclipse.jetty.server.SslConnectionFactory;
 import org.eclipse.jetty.server.handler.HandlerCollection;
 import org.eclipse.jetty.server.handler.ResourceHandler;
+import org.eclipse.jetty.server.handler.StatisticsHandler;
 import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
@@ -295,13 +295,13 @@ public class EmbeddedServletContainer implements AutoCloseable {
   // FIXME: Allow both http and https connectors to coexist
 
   @SuppressWarnings("resource")
-  private static void addConnectors(final Server server, final int port, final boolean isHttp2, final String keyStorePath, final String keyStorePassword) {
+  private static void addConnectors(final Server server, final int port, final boolean http2, final String keyStorePath, final String keyStorePassword) {
     server.addBean(new MBeanContainer(ManagementFactory.getPlatformMBeanServer()));
 
     final HttpConfiguration httpConfig = new HttpConfiguration();
 
     final ServerConnector httpConnector, httpsConnector;
-    if (isHttp2) {
+    if (http2) {
       httpConnector = new ServerConnector(server, new HttpConnectionFactory(httpConfig), new HTTP2CServerConnectionFactory(httpConfig));
     }
     else {
@@ -328,7 +328,7 @@ public class EmbeddedServletContainer implements AutoCloseable {
     final HttpConnectionFactory httpConnectionFactory = new HttpConnectionFactory(httpsConfig);
     final SslConnectionFactory sslConnectionFactory = new SslConnectionFactory(sslContextFactory, alpnConnectionFactory.getProtocol());
 
-    if (isHttp2) {
+    if (http2) {
       httpsConnector = new ServerConnector(server, sslConnectionFactory, alpnConnectionFactory, new HTTP2ServerConnectionFactory(httpsConfig), httpConnectionFactory);
     }
     else {
@@ -340,14 +340,21 @@ public class EmbeddedServletContainer implements AutoCloseable {
     server.setConnectors(new ServerConnector[] { httpsConnector });
   }
 
+  private static final int DEFAULT_PORT = 0;
+  private static final String DEFAULT_CONTEXT_PATH = "/";
+  private static final boolean DEFAULT_EXTERNAL_RESOURCE_ACCESS = false;
+  private static final boolean DEFAULT_HTTP2 = true;
+  private static final boolean DEFAULT_STOP_AT_SHUTDOWN = false;
+  private static final long DEFAULT_SHUTDOWN_TIMEOUT = 30000;
+
   public static class Builder {
-    private int port;
+    private int port = DEFAULT_PORT;
 
     /**
      * Returns the builder instance.
      *
      * @param port The listen port, which must be between 0 and 65535. A value of 0 advises Jetty to set a random port that is
-     *          available. The port can thereafter be determined with {@link #getPort()}.
+     *          available. The port can thereafter be determined with {@link #getPort()}. Default: 0.
      * @return The builder instance.
      * @throws IllegalArgumentException If port is not between 0 and 65535.
      */
@@ -359,14 +366,14 @@ public class EmbeddedServletContainer implements AutoCloseable {
       return this;
     }
 
-    private String contextPath = "/";
+    private String contextPath = DEFAULT_CONTEXT_PATH;
 
     /**
      * Returns the builder instance.
      *
      * @param contextPath The prefix portion of request URIs to be matched for handling by the container. If the provided
      *          {@code contextPath} does not start with {@code "/"}, one will be prepended. If the provided {@code contextPath} ends
-     *          with {@code "/*"} or {@code "/"}, this will be removed.
+     *          with {@code "/*"} or {@code "/"}, this will be removed. Default: "/".
      * @return The builder instance.
      * @throws IllegalArgumentException If {@code contextPath} is null.
      */
@@ -377,16 +384,110 @@ public class EmbeddedServletContainer implements AutoCloseable {
       return this;
     }
 
+    private String keyStorePath;
+    private String keyStorePassword;
+
+    /**
+     * Returns the builder instance.
+     *
+     * @param keyStorePath The path of the SSL keystore.
+     * @param keyStorePassword The password for the key store.
+     * @return The builder instance.
+     */
+    public Builder withKeyStore(final String keyStorePath, final String keyStorePassword) {
+      this.keyStorePath = keyStorePath;
+      this.keyStorePassword = keyStorePassword;
+      return this;
+    }
+
+    private boolean externalResourcesAccess = DEFAULT_EXTERNAL_RESOURCE_ACCESS;
+
+    /**
+     * Returns the builder instance. Default: false.
+     *
+     * @param externalResourcesAccess Whether the server should provide directory listings for its resources.
+     * @return The builder instance.
+     */
+    public Builder withExternalResourcesAccess(final boolean externalResourcesAccess) {
+      this.externalResourcesAccess = externalResourcesAccess;
+      return this;
+    }
+
+    private boolean http2 = DEFAULT_HTTP2;
+
+    /**
+     * Returns the builder instance.
+     *
+     * @param http2 Whether the server should support HTTP/2. Default: true.
+     * @return The builder instance.
+     */
+    public Builder withHttp2(final boolean http2) {
+      this.http2 = http2;
+      return this;
+    }
+
+    private boolean stopAtShutdown = DEFAULT_STOP_AT_SHUTDOWN;
+
+    /**
+     * Returns the builder instance.
+     *
+     * @param stopAtShutdown Whether the container should be explicitly stopped (and thus fulfill its graceful shutdown) when the
+     *          JVM is shutdown. Default: false.
+     * @return The builder instance.
+     */
+    public Builder withStopAtShutdown(final boolean stopAtShutdown) {
+      this.stopAtShutdown = stopAtShutdown;
+      return this;
+    }
+
+    private long shutdownTimeout = DEFAULT_SHUTDOWN_TIMEOUT;
+
+    /**
+     * Returns the builder instance.
+     *
+     * @param shutdownTimeout The timeout (in milliseconds) for the server to gracefully stop before exiting.
+     * @return The builder instance.
+     * @throws IllegalArgumentException If {@code shutdownTimeout} is negative.
+     */
+    public Builder withShutdownTimeout(final long shutdownTimeout) {
+      this.shutdownTimeout = assertNotNegative(shutdownTimeout);
+      return this;
+    }
+
+    private Realm realm;
+
+    /**
+     * Returns the builder instance.
+     *
+     * @param realm The realm of roles and credentials.
+     * @return The builder instance.
+     */
+    public Builder withRealm(final Realm realm) {
+      this.realm = realm;
+      return this;
+    }
+
+    private UncaughtServletExceptionHandler uncaughtServletExceptionHandler;
+
+    /**
+     * Returns the builder instance.
+     *
+     * @param uncaughtServletExceptionHandler Handler to be used for uncaught servlet exceptions.
+     * @return The builder instance.
+     */
+    public Builder withUncaughtServletExceptionHandler(final UncaughtServletExceptionHandler uncaughtServletExceptionHandler) {
+      this.uncaughtServletExceptionHandler = uncaughtServletExceptionHandler;
+      return this;
+    }
+
     private Set<Class<? extends HttpServlet>> servletClasses;
 
     /**
      * Returns the builder instance.
      *
-     * @param servletClasses Set of servlet classes to be registered with
-     *          Jetty's web context. If the specified set is null, and the
-     *          {@code servletInstances} set is null, the
-     *          {@link EmbeddedServletContainer} will scan candidate packages
-     *          for {@link HttpServlet} classes to load automatically.
+     * @param servletClasses Set of servlet classes to be registered with Jetty's web context. If the specified set is null, and the
+     *          {@code servletInstances} set is null, the {@link EmbeddedServletContainer} will scan candidate packages for
+     *          {@link HttpServlet} classes to load automatically.
      * @return The builder instance.
      */
     public Builder withServletClasses(final Set<Class<? extends HttpServlet>> servletClasses) {
@@ -521,68 +622,13 @@ public class EmbeddedServletContainer implements AutoCloseable {
       return this;
     }
 
-    private Realm realm;
-
-    /**
-     * Returns the builder instance.
-     *
-     * @param realm The realm of roles and credentials.
-     * @return The builder instance.
-     */
-    public Builder withRealm(final Realm realm) {
-      this.realm = realm;
-      return this;
-    }
-
-    private UncaughtServletExceptionHandler uncaughtServletExceptionHandler;
-
-    /**
-     * Returns the builder instance.
-     *
-     * @param uncaughtServletExceptionHandler Handler to be used for uncaught servlet exceptions.
-     * @return The builder instance.
-     */
-    public Builder withUncaughtServletExceptionHandler(final UncaughtServletExceptionHandler uncaughtServletExceptionHandler) {
-      this.uncaughtServletExceptionHandler = uncaughtServletExceptionHandler;
-      return this;
-    }
-
-    private boolean externalResourcesAccess;
-
-    /**
-     * Returns the builder instance.
-     *
-     * @param externalResourcesAccess Whether the server should provide directory listings for its resources.
-     * @return The builder instance.
-     */
-    public Builder withExternalResourcesAccess(final boolean externalResourcesAccess) {
-      this.externalResourcesAccess = externalResourcesAccess;
-      return this;
-    }
-
-    private String keyStorePath;
-    private String keyStorePassword;
-
-    /**
-     * Returns the builder instance.
-     *
-     * @param keyStorePath The path of the SSL keystore.
-     * @param keyStorePassword The password for the key store.
-     * @return The builder instance.
-     */
-    public Builder withKeyStore(final String keyStorePath, final String keyStorePassword) {
-      this.keyStorePath = keyStorePath;
-      this.keyStorePassword = keyStorePassword;
-      return this;
-    }
-
     /**
      * Returns a new {@link EmbeddedServletContainer} with the configuration in this builder instance.
      *
      * @return A new {@link EmbeddedServletContainer} with the configuration in this builder instance.
      */
     public EmbeddedServletContainer build() {
-      return new EmbeddedServletContainer(port, contextPath, keyStorePath, keyStorePassword, externalResourcesAccess, realm, uncaughtServletExceptionHandler, servletClasses, servletInstances, filterClasses, filterInstances);
+      return new EmbeddedServletContainer(port, contextPath, keyStorePath, keyStorePassword, externalResourcesAccess, http2, stopAtShutdown, shutdownTimeout, realm, uncaughtServletExceptionHandler, servletClasses, servletInstances, filterClasses, filterInstances);
     }
   }
 
@@ -598,7 +644,7 @@ public class EmbeddedServletContainer implements AutoCloseable {
    * @throws IllegalArgumentException If port is not between 0 and 65535.
    */
   public EmbeddedServletContainer(final int port, final UncaughtServletExceptionHandler uncaughtServletExceptionHandler) {
-    this(port, "/", null, null, false, null, uncaughtServletExceptionHandler, null, null, null, null);
+    this(port, DEFAULT_CONTEXT_PATH, null, null, DEFAULT_EXTERNAL_RESOURCE_ACCESS, DEFAULT_HTTP2, DEFAULT_STOP_AT_SHUTDOWN, DEFAULT_SHUTDOWN_TIMEOUT, null, uncaughtServletExceptionHandler, null, null, null, null);
   }
 
   /**
@@ -623,7 +669,7 @@ public class EmbeddedServletContainer implements AutoCloseable {
    * @throws IllegalArgumentException If port is not between 0 and 65535.
    */
   public EmbeddedServletContainer(final int port, final UncaughtServletExceptionHandler uncaughtServletExceptionHandler, final Set<Class<? extends HttpServlet>> servletClasses, final Set<HttpServlet> servletInstances, final Set<Class<? extends Filter>> filterClasses, final Set<Filter> filterInstances) {
-    this(port, "/", null, null, false, null, uncaughtServletExceptionHandler, servletClasses, servletInstances, filterClasses, filterInstances);
+    this(port, DEFAULT_CONTEXT_PATH, null, null, DEFAULT_EXTERNAL_RESOURCE_ACCESS, DEFAULT_HTTP2, DEFAULT_STOP_AT_SHUTDOWN, DEFAULT_SHUTDOWN_TIMEOUT, null, uncaughtServletExceptionHandler, servletClasses, servletInstances, filterClasses, filterInstances);
   }
 
   /**
@@ -638,6 +684,10 @@ public class EmbeddedServletContainer implements AutoCloseable {
    * @param keyStorePath The path of the SSL keystore.
    * @param keyStorePassword The password for the key store.
    * @param externalResourcesAccess Whether the server should provide directory listings for its resources.
+   * @param http2 Whether the server should support HTTP/2.
+   * @param stopAtShutdown Whether the container should be explicitly stopped (and thus fulfill its graceful shutdown) when the JVM
+   *          is shutdown.
+   * @param shutdownTimeout The timeout (in milliseconds) for the server to gracefully stop before exiting.
    * @param realm The realm of roles and credentials.
    * @param uncaughtServletExceptionHandler Handler to be used for uncaught servlet exceptions.
    * @param servletClasses Set of servlet classes to be registered with Jetty's web context. If the specified set is null, and the
@@ -654,21 +704,28 @@ public class EmbeddedServletContainer implements AutoCloseable {
    *          {@link Filter} classes to load automatically.
    * @throws IllegalArgumentException If port is not between 0 and 65535, or if {@code contextPath} is null.
    */
-  public EmbeddedServletContainer(final int port, final String contextPath, final String keyStorePath, final String keyStorePassword, final boolean externalResourcesAccess, final Realm realm, final UncaughtServletExceptionHandler uncaughtServletExceptionHandler, final Set<Class<? extends HttpServlet>> servletClasses, final Set<HttpServlet> servletInstances, final Set<Class<? extends Filter>> filterClasses, final Set<Filter> filterInstances) {
+  public EmbeddedServletContainer(
+    final int port,
+    final String contextPath,
+    final String keyStorePath,
+    final String keyStorePassword,
+    final boolean externalResourcesAccess,
+    final boolean http2,
+    final boolean stopAtShutdown,
+    final long shutdownTimeout,
+    final Realm realm,
+    final UncaughtServletExceptionHandler uncaughtServletExceptionHandler,
+    final Set<Class<? extends HttpServlet>> servletClasses,
+    final Set<HttpServlet> servletInstances,
+    final Set<Class<? extends Filter>> filterClasses,
+    final Set<Filter> filterInstances) {
+
     if (port < 0 || 65535 < port)
       throw new IllegalArgumentException("Port (" + port + ") must be between 0 and 65535");
 
     this.server = new Server();
 
-    final ServletContextHandler context = createServletContextHandler(realm);
-    context.setContextPath(contextPath);
-    addAllServlets(context, uncaughtServletExceptionHandler, servletClasses, servletInstances, filterClasses, filterInstances);
-    // FIXME: Make isHttp2 a parameterized config
-    addConnectors(server, port, true, keyStorePath, keyStorePassword);
-
     final HandlerCollection handlers = new HandlerCollection();
-    for (final Handler handler : server.getHandlers()) // [A]
-      handlers.addHandler(handler);
 
     if (externalResourcesAccess) {
       final String resourceName = getClass().getName().replace('.', '/').concat(".class");
@@ -684,8 +741,22 @@ public class EmbeddedServletContainer implements AutoCloseable {
       handlers.addHandler(resourceHandler);
     }
 
-    handlers.addHandler(context);
+    final ServletContextHandler contextHandler = createServletContextHandler(realm);
+    contextHandler.setContextPath(contextPath);
+    addAllServlets(contextHandler, uncaughtServletExceptionHandler, servletClasses, servletInstances, filterClasses, filterInstances);
+    addConnectors(server, port, http2, keyStorePath, keyStorePassword);
+    handlers.addHandler(contextHandler);
+
     server.setHandler(handlers);
+
+    server.setStopTimeout(shutdownTimeout);
+    if (stopAtShutdown) {
+      server.setStopAtShutdown(true);
+
+      final StatisticsHandler statisticsHandler = new StatisticsHandler();
+      statisticsHandler.setHandler(server.getHandler());
+      server.setHandler(statisticsHandler);
+    }
 
     // Look at the javadoc for CustomRequestLog.
     // There is no special case handling of "proxiedForAddress", relies on
@@ -695,13 +766,12 @@ public class EmbeddedServletContainer implements AutoCloseable {
   }
 
   /**
-   * Creates a new {@link EmbeddedServletContainer} from the specified
-   * {@link Builder}.
+   * Creates a new {@link EmbeddedServletContainer} from the specified {@link Builder}.
    *
    * @param builder The {@link Builder}.
    */
   public EmbeddedServletContainer(final EmbeddedServletContainer.Builder builder) {
-    this(builder.port, builder.contextPath, builder.keyStorePath, builder.keyStorePassword, builder.externalResourcesAccess, builder.realm, builder.uncaughtServletExceptionHandler, builder.servletClasses, builder.servletInstances, builder.filterClasses, builder.filterInstances);
+    this(builder.port, builder.contextPath, builder.keyStorePath, builder.keyStorePassword, builder.externalResourcesAccess, builder.http2, builder.stopAtShutdown, builder.shutdownTimeout, builder.realm, builder.uncaughtServletExceptionHandler, builder.servletClasses, builder.servletInstances, builder.filterClasses, builder.filterInstances);
   }
 
   /**
