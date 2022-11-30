@@ -228,7 +228,7 @@ public class EmbeddedServletContainer implements AutoCloseable {
       final UserStore userStore = new UserStore();
       final Map<String,String> credentials = realm.getCredentials();
       if (credentials.size() > 0)
-        for (final Map.Entry<String,String> entry : credentials.entrySet()) {
+        for (final Map.Entry<String,String> entry : credentials.entrySet()) { // [S]
           final Set<String> roles = realm.getRoles();
           if (roles.size() > 0)
             for (final String role : roles) // [S]
@@ -295,7 +295,7 @@ public class EmbeddedServletContainer implements AutoCloseable {
   // FIXME: Allow both http and https connectors to coexist
 
   @SuppressWarnings("resource")
-  private static void addConnectors(final Server server, final int port, final boolean http2, final String keyStorePath, final String keyStorePassword) {
+  private static void addConnectors(final Server server, final int port, final boolean http2, final long idleTimeout, final String keyStorePath, final String keyStorePassword) {
     server.addBean(new MBeanContainer(ManagementFactory.getPlatformMBeanServer()));
 
     final HttpConfiguration httpConfig = new HttpConfiguration();
@@ -307,6 +307,8 @@ public class EmbeddedServletContainer implements AutoCloseable {
     else {
       httpConnector = new ServerConnector(server, new HttpConnectionFactory(httpConfig));
     }
+
+    httpConnector.setIdleTimeout(idleTimeout);
 
     if (keyStorePath == null || keyStorePassword == null) {
       httpConnector.setPort(port);
@@ -346,6 +348,7 @@ public class EmbeddedServletContainer implements AutoCloseable {
   private static final boolean DEFAULT_HTTP2 = true;
   private static final boolean DEFAULT_STOP_AT_SHUTDOWN = false;
   private static final long DEFAULT_SHUTDOWN_TIMEOUT = 30000;
+  private static final long DEFAULT_IDLE_TIMEOUT = 30000;
 
   public static class Builder {
     private int port = DEFAULT_PORT;
@@ -451,6 +454,21 @@ public class EmbeddedServletContainer implements AutoCloseable {
      */
     public Builder withShutdownTimeout(final long shutdownTimeout) {
       this.shutdownTimeout = assertNotNegative(shutdownTimeout);
+      return this;
+    }
+
+    private long idleTimeout = DEFAULT_IDLE_TIMEOUT;
+
+    /**
+     * Returns the builder instance.
+     *
+     * @param idleTimeout The maximum idle time for a connection.
+     * @return The builder instance.
+     * @throws IllegalArgumentException If {@code idleTimeout} is negative.
+     * @see ServerConnector#setIdleTimeout(long)
+     */
+    public Builder withIdleTimeout(final long idleTimeout) {
+      this.idleTimeout = assertNotNegative(idleTimeout);
       return this;
     }
 
@@ -628,7 +646,7 @@ public class EmbeddedServletContainer implements AutoCloseable {
      * @return A new {@link EmbeddedServletContainer} with the configuration in this builder instance.
      */
     public EmbeddedServletContainer build() {
-      return new EmbeddedServletContainer(port, contextPath, keyStorePath, keyStorePassword, externalResourcesAccess, http2, stopAtShutdown, shutdownTimeout, realm, uncaughtServletExceptionHandler, servletClasses, servletInstances, filterClasses, filterInstances);
+      return new EmbeddedServletContainer(port, contextPath, keyStorePath, keyStorePassword, externalResourcesAccess, http2, stopAtShutdown, shutdownTimeout, idleTimeout, realm, uncaughtServletExceptionHandler, servletClasses, servletInstances, filterClasses, filterInstances);
     }
   }
 
@@ -644,7 +662,7 @@ public class EmbeddedServletContainer implements AutoCloseable {
    * @throws IllegalArgumentException If port is not between 0 and 65535.
    */
   public EmbeddedServletContainer(final int port, final UncaughtServletExceptionHandler uncaughtServletExceptionHandler) {
-    this(port, DEFAULT_CONTEXT_PATH, null, null, DEFAULT_EXTERNAL_RESOURCE_ACCESS, DEFAULT_HTTP2, DEFAULT_STOP_AT_SHUTDOWN, DEFAULT_SHUTDOWN_TIMEOUT, null, uncaughtServletExceptionHandler, null, null, null, null);
+    this(port, DEFAULT_CONTEXT_PATH, null, null, DEFAULT_EXTERNAL_RESOURCE_ACCESS, DEFAULT_HTTP2, DEFAULT_STOP_AT_SHUTDOWN, DEFAULT_SHUTDOWN_TIMEOUT, DEFAULT_IDLE_TIMEOUT, null, uncaughtServletExceptionHandler, null, null, null, null);
   }
 
   /**
@@ -669,7 +687,7 @@ public class EmbeddedServletContainer implements AutoCloseable {
    * @throws IllegalArgumentException If port is not between 0 and 65535.
    */
   public EmbeddedServletContainer(final int port, final UncaughtServletExceptionHandler uncaughtServletExceptionHandler, final Set<Class<? extends HttpServlet>> servletClasses, final Set<HttpServlet> servletInstances, final Set<Class<? extends Filter>> filterClasses, final Set<Filter> filterInstances) {
-    this(port, DEFAULT_CONTEXT_PATH, null, null, DEFAULT_EXTERNAL_RESOURCE_ACCESS, DEFAULT_HTTP2, DEFAULT_STOP_AT_SHUTDOWN, DEFAULT_SHUTDOWN_TIMEOUT, null, uncaughtServletExceptionHandler, servletClasses, servletInstances, filterClasses, filterInstances);
+    this(port, DEFAULT_CONTEXT_PATH, null, null, DEFAULT_EXTERNAL_RESOURCE_ACCESS, DEFAULT_HTTP2, DEFAULT_STOP_AT_SHUTDOWN, DEFAULT_SHUTDOWN_TIMEOUT, DEFAULT_IDLE_TIMEOUT, null, uncaughtServletExceptionHandler, servletClasses, servletInstances, filterClasses, filterInstances);
   }
 
   /**
@@ -688,6 +706,7 @@ public class EmbeddedServletContainer implements AutoCloseable {
    * @param stopAtShutdown Whether the container should be explicitly stopped (and thus fulfill its graceful shutdown) when the JVM
    *          is shutdown.
    * @param shutdownTimeout The timeout (in milliseconds) for the server to gracefully stop before exiting.
+   * @param idleTimeout The maximum idle time for a connection. See {@link ServerConnector#setIdleTimeout(long)}.
    * @param realm The realm of roles and credentials.
    * @param uncaughtServletExceptionHandler Handler to be used for uncaught servlet exceptions.
    * @param servletClasses Set of servlet classes to be registered with Jetty's web context. If the specified set is null, and the
@@ -713,6 +732,7 @@ public class EmbeddedServletContainer implements AutoCloseable {
     final boolean http2,
     final boolean stopAtShutdown,
     final long shutdownTimeout,
+    final long idleTimeout,
     final Realm realm,
     final UncaughtServletExceptionHandler uncaughtServletExceptionHandler,
     final Set<Class<? extends HttpServlet>> servletClasses,
@@ -744,7 +764,7 @@ public class EmbeddedServletContainer implements AutoCloseable {
     final ServletContextHandler contextHandler = createServletContextHandler(realm);
     contextHandler.setContextPath(contextPath);
     addAllServlets(contextHandler, uncaughtServletExceptionHandler, servletClasses, servletInstances, filterClasses, filterInstances);
-    addConnectors(server, port, http2, keyStorePath, keyStorePassword);
+    addConnectors(server, port, http2, idleTimeout, keyStorePath, keyStorePassword);
     handlers.addHandler(contextHandler);
 
     server.setHandler(handlers);
@@ -758,9 +778,8 @@ public class EmbeddedServletContainer implements AutoCloseable {
       server.setHandler(statisticsHandler);
     }
 
-    // Look at the javadoc for CustomRequestLog.
-    // There is no special case handling of "proxiedForAddress", relies on
-    // ForwardRequestCustomizer. For Log Latency, see "%D" formatting option.
+    // Look at the javadoc for CustomRequestLog. There is no special case handling of "proxiedForAddress",
+    // which relies on ForwardRequestCustomizer. For Log Latency, see "%D" formatting option.
     final CustomRequestLog requestLog = new CustomRequestLog(new Slf4jRequestLogWriter(), CustomRequestLog.EXTENDED_NCSA_FORMAT);
     server.setRequestLog(requestLog);
   }
@@ -771,7 +790,7 @@ public class EmbeddedServletContainer implements AutoCloseable {
    * @param builder The {@link Builder}.
    */
   public EmbeddedServletContainer(final EmbeddedServletContainer.Builder builder) {
-    this(builder.port, builder.contextPath, builder.keyStorePath, builder.keyStorePassword, builder.externalResourcesAccess, builder.http2, builder.stopAtShutdown, builder.shutdownTimeout, builder.realm, builder.uncaughtServletExceptionHandler, builder.servletClasses, builder.servletInstances, builder.filterClasses, builder.filterInstances);
+    this(builder.port, builder.contextPath, builder.keyStorePath, builder.keyStorePassword, builder.externalResourcesAccess, builder.http2, builder.stopAtShutdown, builder.shutdownTimeout, builder.idleTimeout, builder.realm, builder.uncaughtServletExceptionHandler, builder.servletClasses, builder.servletInstances, builder.filterClasses, builder.filterInstances);
   }
 
   /**
