@@ -338,6 +338,8 @@ public class EmbeddedServletContainer implements AutoCloseable {
       httpsConnector = new ServerConnector(server, sslConnectionFactory, alpnConnectionFactory, httpConnectionFactory);
     }
 
+    httpsConnector.setIdleTimeout(idleTimeout);
+
     httpsConnector.setPort(port);
     server.setConnectors(new ServerConnector[] { httpsConnector });
   }
@@ -348,7 +350,7 @@ public class EmbeddedServletContainer implements AutoCloseable {
   private static final boolean DEFAULT_HTTP2 = true;
   private static final boolean DEFAULT_STOP_AT_SHUTDOWN = false;
   private static final long DEFAULT_SHUTDOWN_TIMEOUT = 30000;
-  private static final long DEFAULT_IDLE_TIMEOUT = 30000;
+  private static final long DEFAULT_IDLE_TIMEOUT = 0;
 
   public static class Builder {
     private int port = DEFAULT_PORT;
