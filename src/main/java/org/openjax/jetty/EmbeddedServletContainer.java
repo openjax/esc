@@ -128,7 +128,7 @@ public class EmbeddedServletContainer implements AutoCloseable {
 
     final WebServlet webServlet = servletClass.getAnnotation(WebServlet.class);
     if (webServlet == null) {
-      logger.warn("HttpServlet class " + servletClass.getName() + " is missing the @WebServlet annotation");
+      if (logger.isWarnEnabled()) logger.warn("HttpServlet class " + servletClass.getName() + " is missing the @WebServlet annotation");
       return;
     }
 
@@ -137,14 +137,14 @@ public class EmbeddedServletContainer implements AutoCloseable {
         servletInstance = servletClass.getDeclaredConstructor().newInstance();
       }
       catch (final IllegalAccessException | InstantiationException | InvocationTargetException | NoSuchMethodException e) {
-        logger.warn(e instanceof InvocationTargetException ? e.getCause().getMessage() : e.getMessage());
+        if (logger.isWarnEnabled()) logger.warn(e instanceof InvocationTargetException ? e.getCause().getMessage() : e.getMessage());
         return;
       }
     }
 
     final String[] urlPatterns = webServlet.value().length != 0 ? webServlet.value() : webServlet.urlPatterns();
     if (urlPatterns.length == 0) {
-      logger.warn("HttpServlet class " + servletClass.getName() + " is missing an URL pattern on the @WebServlet annotation");
+      if (logger.isWarnEnabled()) logger.warn("HttpServlet class " + servletClass.getName() + " is missing an URL pattern on the @WebServlet annotation");
       return;
     }
 
@@ -168,10 +168,10 @@ public class EmbeddedServletContainer implements AutoCloseable {
         }
       }
 
-      logger.info(servletClass.getSimpleName() + " [" + context.getSecurityHandler().getLoginService().getName() + "]: " + Arrays.toString(urlPatterns));
+      if (logger.isInfoEnabled()) logger.info(servletClass.getSimpleName() + " [" + context.getSecurityHandler().getLoginService().getName() + "]: " + Arrays.toString(urlPatterns));
     }
 
-    logger.info(servletClass.getName() + " " + Arrays.toString(urlPatterns));
+    if (logger.isInfoEnabled()) logger.info(servletClass.getName() + " " + Arrays.toString(urlPatterns));
     for (final String urlPattern : urlPatterns) { // [A]
       final ServletHolder servletHolder = new ServletHolder(servletInstance);
       servletHolder.setName(servletName);
@@ -195,12 +195,12 @@ public class EmbeddedServletContainer implements AutoCloseable {
 
     final WebFilter webFilter = filterClass.getAnnotation(WebFilter.class);
     if (webFilter == null) {
-      logger.warn("WebFilter class " + filterClass.getName() + " is missing the @WebFilter annotation");
+      if (logger.isWarnEnabled()) logger.warn("WebFilter class " + filterClass.getName() + " is missing the @WebFilter annotation");
       return;
     }
 
     // FIXME: Is it supposed to be EnumSet.noneOf(DispatcherType.class)??? in the addFilter call
-    logger.info(filterClass.getName() + " " + Arrays.toString(webFilter.urlPatterns()));
+    if (logger.isInfoEnabled()) logger.info(filterClass.getName() + " " + Arrays.toString(webFilter.urlPatterns()));
     if (filterInstance != null) {
       final Map<String,String> initParams = new HashMap<>();
       for (final WebInitParam webInitParam : webFilter.initParams()) // [A]
