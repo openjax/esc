@@ -29,6 +29,7 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import javax.servlet.DispatcherType;
@@ -380,10 +381,10 @@ public class EmbeddedServletContainer implements AutoCloseable {
      *          {@code contextPath} does not start with {@code "/"}, one will be prepended. If the provided {@code contextPath} ends
      *          with {@code "/*"} or {@code "/"}, this will be removed. Default: "/".
      * @return The builder instance.
-     * @throws IllegalArgumentException If {@code contextPath} is null.
+     * @throws NullPointerException If {@code contextPath} is null.
      */
     public Builder withContextPath(final String contextPath) {
-      assertNotNull(contextPath, "null contextPath");
+      Objects.requireNonNull(contextPath, "contextPath is null");
 
       this.contextPath = contextPath;
       return this;
