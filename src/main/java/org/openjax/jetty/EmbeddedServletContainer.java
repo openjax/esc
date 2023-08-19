@@ -105,7 +105,7 @@ public class EmbeddedServletContainer implements AutoCloseable {
     return getConstraint(authTypeToConstraint, authType, role);
   }
 
-  private static Constraint getConstraint(final Map<? super String,Constraint> authTypeToConstraint, final String authType, final String role) {
+  private static Constraint getConstraint(final Map<String,Constraint> authTypeToConstraint, final String authType, final String role) {
     Constraint constraint = authTypeToConstraint.get(authType);
     if (constraint != null)
       return constraint;
