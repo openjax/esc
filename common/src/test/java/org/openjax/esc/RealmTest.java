@@ -1,4 +1,4 @@
-/* Copyright (c) 2016 OpenJAX
+/* Copyright (c) 2023 OpenJAX
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -14,27 +14,17 @@
  * program. If not, see <http://opensource.org/licenses/MIT/>.
  */
 
-package org.openjax.jetty;
+package org.openjax.esc;
 
 import static org.junit.Assert.*;
 
 import org.junit.Test;
 
-public class EmbeddedServletContainerTest {
+public class RealmTest {
   @Test
-  public void testExceptions() throws Exception {
-    try (final EmbeddedServletContainer container = new EmbeddedServletContainer(-1, null)) {
-      fail("Expected IllegalArgumentException");
-    }
-    catch (final IllegalArgumentException e) {
-    }
-
-    try {
-      final EmbeddedServletContainer.Builder builder = new EmbeddedServletContainer.Builder();
-      builder.withPort(-1);
-      fail("Expected IllegalArgumentException");
-    }
-    catch (final IllegalArgumentException e) {
-    }
+  public void test() {
+    final Realm realm = new Realm("test");
+    final Realm clone = realm.clone();
+    assertEquals(realm, clone);
   }
 }

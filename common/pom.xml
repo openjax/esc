@@ -21,38 +21,13 @@
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>org.openjax</groupId>
-    <artifactId>openjax</artifactId>
-    <version>2.5.6-SNAPSHOT</version>
+    <artifactId>esc</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
   </parent>
-  <artifactId>esc</artifactId>
-  <version>1.0.0-SNAPSHOT</version>
-  <packaging>pom</packaging>
-  <name>OpenJAX Embedded Servlet Container</name>
+  <groupId>org.openjax.esc</groupId>
+  <artifactId>common</artifactId>
+  <name>OpenJAX Embedded Servlet Container: Common</name>
   <description>
     Embedded Servlet Container.
   </description>
-  <modules>
-    <module>common</module>
-    <module>jetty-9</module>
-  </modules>
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>org.openjax.xml</groupId>
-        <artifactId>xml-maven-plugin</artifactId>
-      </plugin>
-    </plugins>
-  </build>
-  <dependencies>
-    <dependency>
-      <groupId>org.libj</groupId>
-      <artifactId>lang</artifactId>
-      <version>0.8.0-SNAPSHOT</version>
-    </dependency>
-    <dependency>
-      <groupId>org.libj</groupId>
-      <artifactId>net</artifactId>
-      <version>0.5.3-SNAPSHOT</version>
-    </dependency>
-  </dependencies>
 </project>

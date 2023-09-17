@@ -1,4 +1,4 @@
-/* Copyright (c) 2016 OpenJAX
+/* Copyright (c) 2023 OpenJAX
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -14,22 +14,21 @@
  * program. If not, see <http://opensource.org/licenses/MIT/>.
  */
 
-package org.openjax.jetty;
+package org.openjax.esc;
 
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
+import static org.junit.Assert.*;
 
-/**
- * Handler for uncaught servlet exceptions.
- */
-@FunctionalInterface
-public interface UncaughtServletExceptionHandler {
-  /**
-   * Called by the servlet container in the event of an uncaught servlet exception.
-   *
-   * @param request The {@link ServletRequest} associated with the exception.
-   * @param response The {@link ServletResponse} associated with the exception.
-   * @param e The exception.
-   */
-  void uncaughtServletException(ServletRequest request, ServletResponse response, Exception e);
+import org.junit.Test;
+
+public class UncaughtServletExceptionFilterTest {
+  @Test
+  @SuppressWarnings("unused")
+  public void test() {
+    try {
+      new UncaughtServletExceptionFilter(null);
+      fail("Expected NullPointerException");
+    }
+    catch (final NullPointerException e) {
+    }
+  }
 }

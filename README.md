@@ -1,22 +1,22 @@
-# Jetty
+# ESC (Embedded Servlet Container)
 
-[![Build Status](https://github.com/openjax/jetty/actions/workflows/build.yml/badge.svg)](https://github.com/openjax/jetty/actions/workflows/build.yml)
-[![Coverage Status](https://coveralls.io/repos/github/openjax/jetty/badge.svg)](https://coveralls.io/github/openjax/jetty)
-[![Javadocs](https://www.javadoc.io/badge/org.openjax/jetty.svg)](https://www.javadoc.io/doc/org.openjax/jetty)
-[![Released Version](https://img.shields.io/maven-central/v/org.openjax/jetty.svg)](https://mvnrepository.com/artifact/org.openjax/jetty)
-![Snapshot Version](https://img.shields.io/nexus/s/org.openjax/jetty?label=maven-snapshot&server=https%3A%2F%2Foss.sonatype.org)
+[![Build Status](https://github.com/openjax/esc/actions/workflows/build.yml/badge.svg)](https://github.com/openjax/esc/actions/workflows/build.yml)
+[![Coverage Status](https://coveralls.io/repos/github/openjax/esc/badge.svg)](https://coveralls.io/github/openjax/esc)
+[![Javadocs](https://www.javadoc.io/badge/org.openjax/esc.svg)](https://www.javadoc.io/doc/org.openjax/esc)
+[![Released Version](https://img.shields.io/maven-central/v/org.openjax/esc.svg)](https://mvnrepository.com/artifact/org.openjax/esc)
+![Snapshot Version](https://img.shields.io/nexus/s/org.openjax/esc?label=maven-snapshot&server=https%3A%2F%2Foss.sonatype.org)
 
 ## Introduction
 
-OpenJAX Jetty is a conveneince wrapper of the [Jetty Servlet Container][jetty], which provides helpful patterns to developers that desire a lightweight embedded server solution.
+OpenJAX ESC (Embedded Servlet Container) is a conveneince wrapper of the [Jetty Servlet Container][jetty], which provides helpful patterns to developers that desire a lightweight embedded server solution.
 
 ### Simple API for Embedded Servlet Container Initialization
 
-OpenJAX Jetty is created to take full advantage of the `javax.servlet.annotation.*` annotations defined in the [Java Servlet v3 Specification of 2009][servlet-v3-spec]. Designed specifically to avoid non-cohesive config files, OpenJAX Jetty creates a direct and easy to understand embedded wrapper of the Jetty Servlet Container. OpenJAX Jetty provides a simple API to initialize a Servlet Container in a JVM, significantly reducing the headache most people have when attempting to accomplish the same with Jetty's raw APIs.
+OpenJAX ESC (Embedded Servlet Container) is created to take full advantage of the `javax.servlet.annotation.*` annotations defined in the [Java Servlet v3 Specification of 2009][servlet-v3-spec]. Designed specifically to avoid non-cohesive config files, OpenJAX ESC (Embedded Servlet Container) creates a direct and easy to understand embedded wrapper of the Jetty Servlet Container. OpenJAX ESC (Embedded Servlet Container) provides a simple API to initialize a Servlet Container in a JVM, significantly reducing the headache most people have when attempting to accomplish the same with Jetty's raw APIs.
 
 ## Significantly Reduces Boilerplate Code
 
-OpenJAX Jetty is intended to reduce the number of lines of code dedicated to the initialization of the server, therefore reducing the space of possible errors, and thus allowing the developer to move to his next task, confidently assured the server will start.
+OpenJAX ESC (Embedded Servlet Container) is intended to reduce the number of lines of code dedicated to the initialization of the server, therefore reducing the space of possible errors, and thus allowing the developer to move to his next task, confidently assured the server will start.
 
 ## Getting Started
 
@@ -27,20 +27,20 @@ OpenJAX Jetty is intended to reduce the number of lines of code dedicated to the
 
 ### Example
 
-1. Next, add the `org.openjax:jetty` dependency to the POM.
+1. Next, add the `org.openjax:embedded-server` dependency to the POM.
 
    ```xml
    <dependency>
-     <groupId>org.openjax</groupId>
-     <artifactId>jetty</artifactId>
-     <version>9.4.19</version>
+     <groupId>org.openjax.esc</groupId>
+     <artifactId>jetty-9</artifactId>
+     <version>1.0.0</version>
    </dependency>
    ```
 
-1. Make `App` extend `org.openjax.jetty.EmbeddedServletContainer`, and add a constructor.
+1. Make `App` extend `org.openjax.embeddedserver.EmbeddedJetty9`, and add a constructor.
 
    ```java
-   public class Server extends EmbeddedServletContainer {
+   public class Server extends EmbeddedJetty9 {
      public Server(int port) {
        super(port);
      }

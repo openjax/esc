@@ -14,7 +14,7 @@
  * program. If not, see <http://opensource.org/licenses/MIT/>.
  */
 
-package org.openjax.jetty;
+package org.openjax.esc;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -27,8 +27,8 @@ import java.util.Set;
  * A named realm of roles and credentials.
  */
 public class Realm implements Cloneable, Serializable {
-  private final Map<String,String> credentials = new HashMap<>();
-  private final Set<String> roles = new HashSet<>();
+  private final HashMap<String,String> credentials = new HashMap<>();
+  private final HashSet<String> roles = new HashSet<>();
   private final String name;
 
   /**
@@ -44,6 +44,7 @@ public class Realm implements Cloneable, Serializable {
    * Copy constructor.
    *
    * @param copy The {@link Realm} to copy.
+   * @throws NullPointerException If {@code copy} is null.
    */
   protected Realm(final Realm copy) {
     this.name = copy.name;

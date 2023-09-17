@@ -14,7 +14,7 @@
  * program. If not, see <http://opensource.org/licenses/MIT/>.
  */
 
-package org.openjax.jetty;
+package org.openjax.esc;
 
 import java.io.IOException;
 import java.util.Objects;
@@ -22,7 +22,6 @@ import java.util.Objects;
 import javax.servlet.DispatcherType;
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
-import javax.servlet.FilterConfig;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
@@ -34,10 +33,6 @@ class UncaughtServletExceptionFilter implements Filter {
 
   UncaughtServletExceptionFilter(final UncaughtServletExceptionHandler uncaughtServletExceptionHandler) {
     this.uncaughtServletExceptionHandler = Objects.requireNonNull(uncaughtServletExceptionHandler);
-  }
-
-  @Override
-  public void init(final FilterConfig filterConfig) {
   }
 
   @Override
@@ -56,9 +51,5 @@ class UncaughtServletExceptionFilter implements Filter {
 
       throw e1;
     }
-  }
-
-  @Override
-  public void destroy() {
   }
 }
