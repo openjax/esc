@@ -28,10 +28,20 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.annotation.WebFilter;
 
+/**
+ * A {@link Filter} intended to be used for the purpose of catching uncaught exceptions that are thrown in the servlet execution
+ * chain.
+ */
 @WebFilter(filterName="UncaughtServletExceptionFilter", urlPatterns="/*", dispatcherTypes=DispatcherType.REQUEST)
 class UncaughtServletExceptionFilter implements Filter {
   private final UncaughtServletExceptionHandler uncaughtServletExceptionHandler;
 
+  /**
+   * Creates a new {@link UncaughtServletExceptionFilter} with the provided {@link UncaughtServletExceptionHandler}.
+   *
+   * @param uncaughtServletExceptionHandler The {@link UncaughtServletExceptionHandler}.
+   * @throws NullPointerException If {@code uncaughtServletExceptionHandler} is null.
+   */
   UncaughtServletExceptionFilter(final UncaughtServletExceptionHandler uncaughtServletExceptionHandler) {
     this.uncaughtServletExceptionHandler = Objects.requireNonNull(uncaughtServletExceptionHandler);
   }
