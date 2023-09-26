@@ -109,7 +109,7 @@ public class Realm implements Cloneable, Serializable {
       return true;
 
     if (!(obj instanceof Realm))
-        return false;
+      return false;
 
     final Realm that = (Realm)obj;
     return Objects.equals(name, that.name) && credentials.equals(that.credentials) && roles.equals(that.roles);

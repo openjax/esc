@@ -32,7 +32,7 @@ import javax.servlet.annotation.WebFilter;
  * A {@link Filter} intended to be used for the purpose of catching uncaught exceptions that are thrown in the servlet execution
  * chain.
  */
-@WebFilter(filterName="UncaughtServletExceptionFilter", urlPatterns="/*", dispatcherTypes=DispatcherType.REQUEST)
+@WebFilter(filterName = "UncaughtServletExceptionFilter", urlPatterns = "/*", dispatcherTypes = DispatcherType.REQUEST)
 class UncaughtServletExceptionFilter implements Filter {
   private final UncaughtServletExceptionHandler uncaughtServletExceptionHandler;
 
