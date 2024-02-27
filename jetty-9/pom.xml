@@ -31,7 +31,7 @@
     Embedded wrapper of the "Jetty 9 Servlet Container".
   </description>
   <properties>
-    <version.jetty>9.4.52.v20230823</version.jetty>
+    <version.jetty>9.4.53.v20231009</version.jetty>
   </properties>
   <build>
     <plugins>
