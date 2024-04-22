@@ -63,6 +63,7 @@ import org.eclipse.jetty.server.SslConnectionFactory;
 import org.eclipse.jetty.server.handler.HandlerCollection;
 import org.eclipse.jetty.server.handler.ResourceHandler;
 import org.eclipse.jetty.server.handler.StatisticsHandler;
+import org.eclipse.jetty.server.handler.gzip.GzipHandler;
 import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
@@ -349,6 +350,7 @@ public class EmbeddedJetty9 implements AutoCloseable {
   private static final String DEFAULT_CONTEXT_PATH = "/";
   private static final boolean DEFAULT_EXTERNAL_RESOURCE_ACCESS = false;
   private static final boolean DEFAULT_HTTP2 = true;
+  private static final boolean DEFAULT_GZIP_HANDLER = false;
   private static final boolean DEFAULT_STOP_AT_SHUTDOWN = false;
   private static final long DEFAULT_SHUTDOWN_TIMEOUT = 30000;
   private static final long DEFAULT_IDLE_TIMEOUT = 0;
@@ -429,6 +431,20 @@ public class EmbeddedJetty9 implements AutoCloseable {
      */
     public Builder withHttp2(final boolean http2) {
       this.http2 = http2;
+      return this;
+    }
+
+    private boolean gzipHandler = DEFAULT_GZIP_HANDLER;
+
+    /**
+     * Returns the builder instance.
+     *
+     * @param gzipHandler Whether the container should have a {@link GzipHandler} automatically inflate compressed requests. Default:
+     *          false.
+     * @return The builder instance.
+     */
+    public Builder withGZipHandler(final boolean gzipHandler) {
+      this.gzipHandler = gzipHandler;
       return this;
     }
 
@@ -649,7 +665,7 @@ public class EmbeddedJetty9 implements AutoCloseable {
      * @return A new {@link EmbeddedJetty9} with the configuration in this builder instance.
      */
     public EmbeddedJetty9 build() {
-      return new EmbeddedJetty9(port, contextPath, keyStorePath, keyStorePassword, externalResourcesAccess, http2, stopAtShutdown, shutdownTimeout, idleTimeout, realm, uncaughtServletExceptionHandler, servletClasses, servletInstances, filterClasses, filterInstances);
+      return new EmbeddedJetty9(port, contextPath, keyStorePath, keyStorePassword, externalResourcesAccess, http2, gzipHandler, stopAtShutdown, shutdownTimeout, idleTimeout, realm, uncaughtServletExceptionHandler, servletClasses, servletInstances, filterClasses, filterInstances);
     }
   }
 
@@ -665,7 +681,7 @@ public class EmbeddedJetty9 implements AutoCloseable {
    * @throws IllegalArgumentException If port is not between 0 and 65535.
    */
   public EmbeddedJetty9(final int port, final UncaughtServletExceptionHandler uncaughtServletExceptionHandler) {
-    this(port, DEFAULT_CONTEXT_PATH, null, null, DEFAULT_EXTERNAL_RESOURCE_ACCESS, DEFAULT_HTTP2, DEFAULT_STOP_AT_SHUTDOWN, DEFAULT_SHUTDOWN_TIMEOUT, DEFAULT_IDLE_TIMEOUT, null, uncaughtServletExceptionHandler, null, null, null, null);
+    this(port, DEFAULT_CONTEXT_PATH, null, null, DEFAULT_EXTERNAL_RESOURCE_ACCESS, DEFAULT_HTTP2, DEFAULT_GZIP_HANDLER, DEFAULT_STOP_AT_SHUTDOWN, DEFAULT_SHUTDOWN_TIMEOUT, DEFAULT_IDLE_TIMEOUT, null, uncaughtServletExceptionHandler, null, null, null, null);
   }
 
   /**
@@ -690,7 +706,7 @@ public class EmbeddedJetty9 implements AutoCloseable {
    * @throws IllegalArgumentException If port is not between 0 and 65535.
    */
   public EmbeddedJetty9(final int port, final UncaughtServletExceptionHandler uncaughtServletExceptionHandler, final Set<Class<? extends HttpServlet>> servletClasses, final Set<HttpServlet> servletInstances, final Set<Class<? extends Filter>> filterClasses, final Set<Filter> filterInstances) {
-    this(port, DEFAULT_CONTEXT_PATH, null, null, DEFAULT_EXTERNAL_RESOURCE_ACCESS, DEFAULT_HTTP2, DEFAULT_STOP_AT_SHUTDOWN, DEFAULT_SHUTDOWN_TIMEOUT, DEFAULT_IDLE_TIMEOUT, null, uncaughtServletExceptionHandler, servletClasses, servletInstances, filterClasses, filterInstances);
+    this(port, DEFAULT_CONTEXT_PATH, null, null, DEFAULT_EXTERNAL_RESOURCE_ACCESS, DEFAULT_HTTP2, DEFAULT_GZIP_HANDLER, DEFAULT_STOP_AT_SHUTDOWN, DEFAULT_SHUTDOWN_TIMEOUT, DEFAULT_IDLE_TIMEOUT, null, uncaughtServletExceptionHandler, servletClasses, servletInstances, filterClasses, filterInstances);
   }
 
   /**
@@ -706,6 +722,7 @@ public class EmbeddedJetty9 implements AutoCloseable {
    * @param keyStorePassword The password for the key store.
    * @param externalResourcesAccess Whether the server should provide directory listings for its resources.
    * @param http2 Whether the server should support HTTP/2.
+   * @param withGzipHandler Whether the container should have a {@link GzipHandler} automatically inflate compressed requests.
    * @param stopAtShutdown Whether the container should be explicitly stopped (and thus fulfill its graceful shutdown) when the JVM is
    *          shutdown.
    * @param shutdownTimeout The timeout (in milliseconds) for the server to gracefully stop before exiting.
@@ -733,6 +750,7 @@ public class EmbeddedJetty9 implements AutoCloseable {
     final String keyStorePassword,
     final boolean externalResourcesAccess,
     final boolean http2,
+    final boolean withGzipHandler,
     final boolean stopAtShutdown,
     final long shutdownTimeout,
     final long idleTimeout,
@@ -743,7 +761,6 @@ public class EmbeddedJetty9 implements AutoCloseable {
     final Set<Class<? extends Filter>> filterClasses,
     final Set<Filter> filterInstances
   ) {
-
     if (port < 0 || 65535 < port)
       throw new IllegalArgumentException("Port (" + port + ") must be between 0 and 65535");
 
@@ -766,6 +783,12 @@ public class EmbeddedJetty9 implements AutoCloseable {
     }
 
     final ServletContextHandler contextHandler = createServletContextHandler(realm);
+    if (withGzipHandler) {
+      final GzipHandler gzipHandler = new GzipHandler();
+      gzipHandler.setInflateBufferSize(1024);
+      contextHandler.setGzipHandler(gzipHandler);
+    }
+
     contextHandler.setContextPath(contextPath);
     addAllServlets(contextHandler, uncaughtServletExceptionHandler, servletClasses, servletInstances, filterClasses, filterInstances);
     addConnectors(server, port, http2, idleTimeout, keyStorePath, keyStorePassword);
@@ -794,7 +817,7 @@ public class EmbeddedJetty9 implements AutoCloseable {
    * @param builder The {@link Builder}.
    */
   public EmbeddedJetty9(final EmbeddedJetty9.Builder builder) {
-    this(builder.port, builder.contextPath, builder.keyStorePath, builder.keyStorePassword, builder.externalResourcesAccess, builder.http2, builder.stopAtShutdown, builder.shutdownTimeout, builder.idleTimeout, builder.realm, builder.uncaughtServletExceptionHandler, builder.servletClasses, builder.servletInstances, builder.filterClasses, builder.filterInstances);
+    this(builder.port, builder.contextPath, builder.keyStorePath, builder.keyStorePassword, builder.externalResourcesAccess, builder.http2, builder.gzipHandler, builder.stopAtShutdown, builder.shutdownTimeout, builder.idleTimeout, builder.realm, builder.uncaughtServletExceptionHandler, builder.servletClasses, builder.servletInstances, builder.filterClasses, builder.filterInstances);
   }
 
   /**
