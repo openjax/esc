@@ -35,6 +35,7 @@ import java.util.Set;
 import javax.servlet.DispatcherType;
 import javax.servlet.Filter;
 import javax.servlet.MultipartConfigElement;
+import javax.servlet.ServletRegistration.Dynamic;
 import javax.servlet.annotation.ServletSecurity;
 import javax.servlet.annotation.WebFilter;
 import javax.servlet.annotation.WebInitParam;
@@ -51,14 +52,13 @@ import org.eclipse.jetty.security.HashLoginService;
 import org.eclipse.jetty.security.SecurityHandler;
 import org.eclipse.jetty.security.UserStore;
 import org.eclipse.jetty.security.authentication.BasicAuthenticator;
-import org.eclipse.jetty.server.CustomRequestLog;
 import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.NetworkConnector;
 import org.eclipse.jetty.server.SecureRequestCustomizer;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
-import org.eclipse.jetty.server.Slf4jRequestLogWriter;
+import org.eclipse.jetty.server.Slf4jRequestLog;
 import org.eclipse.jetty.server.SslConnectionFactory;
 import org.eclipse.jetty.server.handler.HandlerCollection;
 import org.eclipse.jetty.server.handler.ResourceHandler;
@@ -86,27 +86,28 @@ public class EmbeddedJetty9 implements AutoCloseable {
 
   private static final Set<Class<? extends HttpServlet>> addedServletClasses = new HashSet<>();
   private static final Set<Class<? extends Filter>> addedFilterClasses = new HashSet<>();
-  private static final String[] excludePackageStartsWith = {"jdk", "java", "javax", "com.sun", "sun", "org.w3c", "org.xml", "org.jvnet", "org.joda", "org.jcp", "apple.security"};
+  private static final String[] excludePackagePrefixes = {"jdk.", "java.", "javax.", "com.sun.", "sun.", "org.w3c.", "org.xml.", "org.jvnet.", "org.joda.", "org.jcp.", "apple.security."};
 
   private static boolean acceptPackage(final Package pkg) {
-    for (int i = 0, i$ = excludePackageStartsWith.length; i < i$; ++i) // [A]
-      if (pkg.getName().startsWith(excludePackageStartsWith[i] + "."))
+    final String name = pkg.getName();
+    for (final String excludePackagePrefix : excludePackagePrefixes) // [A]
+      if (name.startsWith(excludePackagePrefix))
         return false;
 
     return true;
   }
 
-  private static final Map<String,Map<String,Constraint>> roleToConstraint = new HashMap<>();
+  private static final HashMap<String,HashMap<String,Constraint>> roleToConstraint = new HashMap<>();
 
   private static Constraint getBasicAuthConstraint(final String authType, final String role) {
-    Map<String,Constraint> authTypeToConstraint = roleToConstraint.get(role);
+    HashMap<String,Constraint> authTypeToConstraint = roleToConstraint.get(role);
     if (authTypeToConstraint == null)
       roleToConstraint.put(role, authTypeToConstraint = new HashMap<>());
 
     return getConstraint(authTypeToConstraint, authType, role);
   }
 
-  private static Constraint getConstraint(final Map<String,Constraint> authTypeToConstraint, final String authType, final String role) {
+  private static Constraint getConstraint(final HashMap<String,Constraint> authTypeToConstraint, final String authType, final String role) {
     Constraint constraint = authTypeToConstraint.get(authType);
     if (constraint != null)
       return constraint;
@@ -150,15 +151,17 @@ public class EmbeddedJetty9 implements AutoCloseable {
       return;
     }
 
-    final Map<String,String> initParams = new HashMap<>();
+    final HashMap<String,String> initParams = new HashMap<>();
     for (final WebInitParam webInitParam : webServlet.initParams()) // [A]
       initParams.put(webInitParam.name(), webInitParam.value());
 
-    final String servletName = webServlet.name().length() > 0 ? webServlet.name() : servletClass.getName();
+    final String name = webServlet.name();
+    final String servletName = name.length() > 0 ? name : servletClass.getName();
     final ServletSecurity servletSecurity = servletClass.getAnnotation(ServletSecurity.class);
-    if (servletSecurity != null && servletSecurity.value().rolesAllowed().length > 0) {
+    final String[] rolesAllowed;
+    if (servletSecurity != null && (rolesAllowed = servletSecurity.value().rolesAllowed()).length > 0) {
       for (final String urlPattern : urlPatterns) { // [A]
-        for (final String role : servletSecurity.value().rolesAllowed()) { // [A]
+        for (final String role : rolesAllowed) { // [A]
           final ConstraintMapping constraintMapping = new ConstraintMapping();
           constraintMapping.setConstraint(getBasicAuthConstraint(Constraint.__BASIC_AUTH, role));
           constraintMapping.setPathSpec(urlPattern);
@@ -177,8 +180,9 @@ public class EmbeddedJetty9 implements AutoCloseable {
     for (final String urlPattern : urlPatterns) { // [A]
       final ServletHolder servletHolder = new ServletHolder(servletInstance);
       servletHolder.setName(servletName);
-      servletHolder.getRegistration().setInitParameters(initParams);
-      servletHolder.getRegistration().setMultipartConfig(new MultipartConfigElement(""));
+      final Dynamic registration = servletHolder.getRegistration();
+      registration.setInitParameters(initParams);
+      registration.setMultipartConfig(new MultipartConfigElement(""));
       context.addServlet(servletHolder, urlPattern);
     }
   }
@@ -203,21 +207,24 @@ public class EmbeddedJetty9 implements AutoCloseable {
 
     // FIXME: Is it supposed to be EnumSet.noneOf(DispatcherType.class)??? in the addFilter call
     if (logger.isInfoEnabled()) { logger.info(filterClass.getName() + " " + Arrays.toString(webFilter.urlPatterns())); }
+
+    final DispatcherType[] dispatcherTypes = webFilter.dispatcherTypes();
     if (filterInstance != null) {
-      final Map<String,String> initParams = new HashMap<>();
+      final HashMap<String,String> initParams = new HashMap<>();
       for (final WebInitParam webInitParam : webFilter.initParams()) // [A]
         initParams.put(webInitParam.name(), webInitParam.value());
 
       final FilterHolder filterHolder = new FilterHolder(filterInstance);
-      filterHolder.setName(webFilter.filterName().length() > 0 ? webFilter.filterName() : filterClass.getName());
+      final String filterName = webFilter.filterName();
+      filterHolder.setName(filterName.length() > 0 ? filterName : filterClass.getName());
       filterHolder.getRegistration().setInitParameters(initParams);
       for (final String urlPattern : webFilter.urlPatterns()) { // [A]
-        context.addFilter(filterHolder, urlPattern, webFilter.dispatcherTypes().length > 0 ? EnumSet.of(webFilter.dispatcherTypes()[0], webFilter.dispatcherTypes()) : EnumSet.noneOf(DispatcherType.class));
+        context.addFilter(filterHolder, urlPattern, dispatcherTypes.length > 0 ? EnumSet.of(dispatcherTypes[0], dispatcherTypes) : EnumSet.noneOf(DispatcherType.class));
       }
     }
     else {
       for (final String urlPattern : webFilter.urlPatterns()) { // [A]
-        context.addFilter(filterClass, urlPattern, webFilter.dispatcherTypes().length > 0 ? EnumSet.of(webFilter.dispatcherTypes()[0], webFilter.dispatcherTypes()) : EnumSet.noneOf(DispatcherType.class));
+        context.addFilter(filterClass, urlPattern, dispatcherTypes.length > 0 ? EnumSet.of(dispatcherTypes[0], dispatcherTypes) : EnumSet.noneOf(DispatcherType.class));
       }
     }
   }
@@ -229,13 +236,14 @@ public class EmbeddedJetty9 implements AutoCloseable {
       final HashLoginService login = new HashLoginService(realm.getName());
       final UserStore userStore = new UserStore();
       final Map<String,String> credentials = realm.getCredentials();
-      if (credentials.size() > 0)
+      if (credentials.size() > 0) {
         for (final Map.Entry<String,String> entry : credentials.entrySet()) { // [S]
           final Set<String> roles = realm.getRoles();
           if (roles.size() > 0)
             for (final String role : roles) // [S]
               userStore.addUser(entry.getKey(), Credential.getCredential(entry.getValue()), new String[] {role});
         }
+      }
 
       login.setUserStore(userStore);
       securityHandler.setRealmName(realm.getName());
@@ -303,12 +311,10 @@ public class EmbeddedJetty9 implements AutoCloseable {
     final HttpConfiguration httpConfig = new HttpConfiguration();
 
     final ServerConnector httpConnector, httpsConnector;
-    if (http2) {
+    if (http2)
       httpConnector = new ServerConnector(server, new HttpConnectionFactory(httpConfig), new HTTP2CServerConnectionFactory(httpConfig));
-    }
-    else {
+    else
       httpConnector = new ServerConnector(server, new HttpConnectionFactory(httpConfig));
-    }
 
     httpConnector.setIdleTimeout(idleTimeout);
 
@@ -807,7 +813,10 @@ public class EmbeddedJetty9 implements AutoCloseable {
 
     // Look at the javadoc for CustomRequestLog. There is no special case handling of "proxiedForAddress",
     // which relies on ForwardRequestCustomizer. For Log Latency, see "%D" formatting option.
-    final CustomRequestLog requestLog = new CustomRequestLog(new Slf4jRequestLogWriter(), CustomRequestLog.EXTENDED_NCSA_FORMAT);
+    // final CustomRequestLog requestLog = new CustomRequestLog(new Slf4jRequestLogWriter(), CustomRequestLog.EXTENDED_NCSA_FORMAT);
+
+    final Slf4jRequestLog requestLog = new Slf4jRequestLog();
+    requestLog.setPreferProxiedForAddress(true);
     server.setRequestLog(requestLog);
   }
 
