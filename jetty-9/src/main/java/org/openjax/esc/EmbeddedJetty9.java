@@ -282,14 +282,14 @@ public class EmbeddedJetty9 implements AutoCloseable {
       for (final Package pkg : Package.getPackages()) { // [A]
         if (acceptPackage(pkg)) {
           try {
-            PackageLoader.getContextPackageLoader().loadPackage(pkg, t -> {
-              if (Modifier.isAbstract(t.getModifiers()))
+            PackageLoader.getContextPackageLoader().loadPackage(pkg, (final Class<?> c) -> {
+              if (Modifier.isAbstract(c.getModifiers()))
                 return false;
 
-              if (scanServlets && HttpServlet.class.isAssignableFrom(t))
-                addServlet(context, (Class<? extends HttpServlet>)t, null);
-              else if (scanFilters && Filter.class.isAssignableFrom(t) && t.isAnnotationPresent(WebFilter.class))
-                addFilter(context, (Class<? extends Filter>)t, null);
+              if (scanServlets && HttpServlet.class.isAssignableFrom(c))
+                addServlet(context, (Class<? extends HttpServlet>)c, null);
+              else if (scanFilters && Filter.class.isAssignableFrom(c) && c.isAnnotationPresent(WebFilter.class))
+                addFilter(context, (Class<? extends Filter>)c, null);
 
               return false;
             });
