@@ -24,10 +24,10 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 import java.net.URL;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -117,8 +117,19 @@ public class EmbeddedJetty9 implements AutoCloseable {
     return constraint;
   }
 
+  private static HashMap<String,String> toMap(final WebInitParam[] initParams) {
+    if (initParams == null)
+      return null;
+
+    final HashMap<String,String> map = new HashMap<>(initParams.length);
+    for (final WebInitParam webInitParam : initParams) // [A]
+      map.put(webInitParam.name(), webInitParam.value());
+
+    return map;
+  }
+
   @SuppressWarnings("null")
-  private static void addServlet(final ServletContextHandler context, Class<? extends HttpServlet> servletClass, HttpServlet servletInstance) {
+  private static void addServlet(final ServletContextHandler context, Class<? extends HttpServlet> servletClass, HttpServlet servletInstance, final WebServlet webServlet) {
     if ((servletClass == null) == (servletInstance == null))
       throw new IllegalArgumentException("Either servletClass (" + servletClass + ") XOR servletInstance (" + servletInstance + ") can be provided, not neither and not both");
 
@@ -128,12 +139,6 @@ public class EmbeddedJetty9 implements AutoCloseable {
       return;
     else
       addedServletClasses.add(servletClass);
-
-    final WebServlet webServlet = servletClass.getAnnotation(WebServlet.class);
-    if (webServlet == null) {
-      if (logger.isWarnEnabled()) { logger.warn("HttpServlet class " + servletClass.getName() + " is missing the @WebServlet annotation"); }
-      return;
-    }
 
     if (servletInstance == null) {
       try {
@@ -145,18 +150,11 @@ public class EmbeddedJetty9 implements AutoCloseable {
       }
     }
 
-    final String[] urlPatterns = webServlet.value().length != 0 ? webServlet.value() : webServlet.urlPatterns();
-    if (urlPatterns.length == 0) {
-      if (logger.isWarnEnabled()) { logger.warn("HttpServlet class " + servletClass.getName() + " is missing an URL pattern on the @WebServlet annotation"); }
-      return;
-    }
-
-    final HashMap<String,String> initParams = new HashMap<>();
-    for (final WebInitParam webInitParam : webServlet.initParams()) // [A]
-      initParams.put(webInitParam.name(), webInitParam.value());
+    final HashMap<String,String> initParams = toMap(webServlet.initParams());
 
     final String name = webServlet.name();
     final String servletName = name.length() > 0 ? name : servletClass.getName();
+    final String[] urlPatterns = webServlet.urlPatterns();
     final ServletSecurity servletSecurity = servletClass.getAnnotation(ServletSecurity.class);
     final String[] rolesAllowed;
     if (servletSecurity != null && (rolesAllowed = servletSecurity.value().rolesAllowed()).length > 0) {
@@ -181,14 +179,16 @@ public class EmbeddedJetty9 implements AutoCloseable {
       final ServletHolder servletHolder = new ServletHolder(servletInstance);
       servletHolder.setName(servletName);
       final Dynamic registration = servletHolder.getRegistration();
-      registration.setInitParameters(initParams);
+      if (initParams != null)
+        registration.setInitParameters(initParams);
+
       registration.setMultipartConfig(new MultipartConfigElement(""));
       context.addServlet(servletHolder, urlPattern);
     }
   }
 
   @SuppressWarnings("null")
-  private static void addFilter(final ServletContextHandler context, Class<? extends Filter> filterClass, final Filter filterInstance) {
+  private static void addFilter(final ServletContextHandler context, Class<? extends Filter> filterClass, final Filter filterInstance, final WebFilter webFilter) {
     if ((filterClass == null) == (filterInstance == null))
       throw new IllegalArgumentException("filterClass XOR filterInstance MUST BE not null");
 
@@ -199,25 +199,18 @@ public class EmbeddedJetty9 implements AutoCloseable {
     else
       addedFilterClasses.add(filterClass);
 
-    final WebFilter webFilter = filterClass.getAnnotation(WebFilter.class);
-    if (webFilter == null) {
-      if (logger.isWarnEnabled()) { logger.warn("WebFilter class " + filterClass.getName() + " is missing the @WebFilter annotation"); }
-      return;
-    }
-
     // FIXME: Is it supposed to be EnumSet.noneOf(DispatcherType.class)??? in the addFilter call
     if (logger.isInfoEnabled()) { logger.info(filterClass.getName() + " " + Arrays.toString(webFilter.urlPatterns())); }
 
     final DispatcherType[] dispatcherTypes = webFilter.dispatcherTypes();
     if (filterInstance != null) {
-      final HashMap<String,String> initParams = new HashMap<>();
-      for (final WebInitParam webInitParam : webFilter.initParams()) // [A]
-        initParams.put(webInitParam.name(), webInitParam.value());
-
       final FilterHolder filterHolder = new FilterHolder(filterInstance);
       final String filterName = webFilter.filterName();
       filterHolder.setName(filterName.length() > 0 ? filterName : filterClass.getName());
-      filterHolder.getRegistration().setInitParameters(initParams);
+      final HashMap<String,String> initParams = toMap(webFilter.initParams());
+      if (initParams != null)
+        filterHolder.getRegistration().setInitParameters(initParams);
+
       for (final String urlPattern : webFilter.urlPatterns()) { // [A]
         context.addFilter(filterHolder, urlPattern, dispatcherTypes.length > 0 ? EnumSet.of(dispatcherTypes[0], dispatcherTypes) : EnumSet.noneOf(DispatcherType.class));
       }
@@ -256,28 +249,28 @@ public class EmbeddedJetty9 implements AutoCloseable {
   }
 
   @SuppressWarnings("unchecked")
-  private static void addAllServlets(final ServletContextHandler context, final UncaughtServletExceptionHandler uncaughtServletExceptionHandler, final Set<Class<? extends HttpServlet>> servletClasses, final Set<? extends HttpServlet> servletInstances, final Set<Class<? extends Filter>> filterClasses, final Set<? extends Filter> filterInstances) {
-    if (servletClasses != null && servletClasses.size() > 0)
-      for (final Class<? extends HttpServlet> servletClass : servletClasses) // [S]
-        addServlet(context, servletClass, null);
+  private static void addAllServlets(final ServletContextHandler context, final UncaughtServletExceptionHandler uncaughtServletExceptionHandler, final Map<Class<? extends HttpServlet>,WebServlet> servletClassToUrlPatterns, final Map<? extends HttpServlet,WebServlet> servletInstanceToUrlPatterns, final Map<Class<? extends Filter>,WebFilter> filterClassToUrlPatterns, final Map<? extends Filter,WebFilter> filterInstancesToUrlPatterns) {
+    if (servletClassToUrlPatterns != null && servletClassToUrlPatterns.size() > 0)
+      for (final Map.Entry<Class<? extends HttpServlet>,WebServlet> servletClassToUrlPattern : servletClassToUrlPatterns.entrySet()) // [S]
+        addServlet(context, servletClassToUrlPattern.getKey(), null, servletClassToUrlPattern.getValue());
 
-    if (servletInstances != null && servletInstances.size() > 0)
-      for (final HttpServlet servletInstance : servletInstances) // [S]
-        addServlet(context, null, servletInstance);
+    if (servletInstanceToUrlPatterns != null && servletInstanceToUrlPatterns.size() > 0)
+      for (final Map.Entry<? extends HttpServlet,WebServlet> servletInstanceToUrlPattern : servletInstanceToUrlPatterns.entrySet()) // [S]
+        addServlet(context, null, servletInstanceToUrlPattern.getKey(), servletInstanceToUrlPattern.getValue());
 
     if (uncaughtServletExceptionHandler != null)
-      addFilter(context, null, new UncaughtServletExceptionFilter(uncaughtServletExceptionHandler));
+      addFilter(context, null, new UncaughtServletExceptionFilter(uncaughtServletExceptionHandler), UncaughtServletExceptionFilter.class.getAnnotation(WebFilter.class));
 
-    if (filterClasses != null && filterClasses.size() > 0)
-      for (final Class<? extends Filter> filterClass : filterClasses) // [S]
-        addFilter(context, filterClass, null);
+    if (filterClassToUrlPatterns != null && filterClassToUrlPatterns.size() > 0)
+      for (final Map.Entry<Class<? extends Filter>,WebFilter> filterClassToUrlPattern : filterClassToUrlPatterns.entrySet()) // [S]
+        addFilter(context, filterClassToUrlPattern.getKey(), null, filterClassToUrlPattern.getValue());
 
-    if (filterInstances != null && filterInstances.size() > 0)
-      for (final Filter filterInstance : filterInstances) // [S]
-        addFilter(context, null, filterInstance);
+    if (filterInstancesToUrlPatterns != null && filterInstancesToUrlPatterns.size() > 0)
+      for (final Map.Entry<? extends Filter,WebFilter> filterInstancesToUrlPattern : filterInstancesToUrlPatterns.entrySet()) // [S]
+        addFilter(context, null, filterInstancesToUrlPattern.getKey(), filterInstancesToUrlPattern.getValue());
 
-    final boolean scanServlets = servletClasses == null && servletInstances == null;
-    final boolean scanFilters = filterClasses == null && filterInstances == null;
+    final boolean scanServlets = servletClassToUrlPatterns == null && servletInstanceToUrlPatterns == null;
+    final boolean scanFilters = filterClassToUrlPatterns == null && filterInstancesToUrlPatterns == null;
     if (scanServlets || scanFilters) {
       for (final Package pkg : Package.getPackages()) { // [A]
         if (acceptPackage(pkg)) {
@@ -287,9 +280,9 @@ public class EmbeddedJetty9 implements AutoCloseable {
                 return false;
 
               if (scanServlets && HttpServlet.class.isAssignableFrom(c))
-                addServlet(context, (Class<? extends HttpServlet>)c, null);
+                addServlet(context, (Class<? extends HttpServlet>)c, null, null);
               else if (scanFilters && Filter.class.isAssignableFrom(c) && c.isAnnotationPresent(WebFilter.class))
-                addFilter(context, (Class<? extends Filter>)c, null);
+                addFilter(context, (Class<? extends Filter>)c, null, null);
 
               return false;
             });
@@ -363,6 +356,53 @@ public class EmbeddedJetty9 implements AutoCloseable {
 
   public static class Builder {
     private int port = DEFAULT_PORT;
+
+    private LinkedHashMap<HttpServlet,WebServlet> servletInstances;
+    private LinkedHashMap<Class<? extends HttpServlet>,WebServlet> servletClasses;
+    private LinkedHashMap<Class<? extends Filter>,WebFilter> filterClasses;
+    private LinkedHashMap<Filter,WebFilter> filterInstances;
+
+    private void addServlet(final Class<? extends HttpServlet> servletClass, final HttpServlet servletInstance, WebServlet webServlet) {
+      if (webServlet == null)
+        webServlet = servletClass.getAnnotation(WebServlet.class);
+
+      if (webServlet == null) {
+        if (logger.isWarnEnabled()) { logger.warn("@WebServlet annotation is not provided with HttpServlet class " + servletClass.getName()); }
+        return;
+      }
+
+      final String[] urlPatterns = webServlet.urlPatterns();
+      if (urlPatterns == null || urlPatterns.length == 0) {
+        if (logger.isWarnEnabled()) { logger.warn("URL pattern(s) are not specified on the @WebServlet annotation of the HttpServlet class " + servletClass.getName() + ". Skipping class."); }
+        return;
+      }
+
+      if (servletInstance != null)
+        servletInstances.put(servletInstance, webServlet);
+      else
+        servletClasses.put(servletClass, webServlet);
+    }
+
+    private void addFilter(final Class<? extends Filter> filterClass, final Filter filterInstance, WebFilter webFilter) {
+      if (webFilter == null)
+        webFilter = filterClass.getAnnotation(WebFilter.class);
+
+      if (webFilter == null) {
+        if (logger.isWarnEnabled()) { logger.warn("@WebFilter annotation is not provided with Filter class " + filterClass.getName()); }
+        return;
+      }
+
+      final String[] urlPatterns = webFilter.urlPatterns();
+      if (urlPatterns == null || urlPatterns.length == 0) {
+        if (logger.isWarnEnabled()) { logger.warn("urlPatterns argument is null, and URL pattern(s) are not specifies on the @WebFilter annotation of the Filter class " + filterClass.getName()); }
+        return;
+      }
+
+      if (filterInstance != null)
+        filterInstances.put(filterInstance, webFilter);
+      else
+        filterClasses.put(filterClass, webFilter);
+    }
 
     /**
      * Returns the builder instance.
@@ -523,34 +563,24 @@ public class EmbeddedJetty9 implements AutoCloseable {
       return this;
     }
 
-    private Set<Class<? extends HttpServlet>> servletClasses;
-
     /**
      * Returns the builder instance.
      *
-     * @param servletClasses Set of servlet classes to be registered with Jetty's web context. If the specified set is null, and the
-     *          {@code servletInstances} set is null, the {@link EmbeddedJetty9} will scan candidate packages for {@link HttpServlet}
-     *          classes to load automatically.
+     * @param servletClasses Set of servlet classes to be registered with Jetty's web context. Calling this method with {@code null}
+     *          will set the {@link #servletClasses} set to null. Calling this method multiple times with non-null values will add to
+     *          (instead of replace) the {@link #servletClasses} set with the provided servlet classes.
      * @return The builder instance.
+     * @implNote If the specified set is null, and the {@link #servletClasses} set is null, the {@link EmbeddedJetty9} will scan
+     *           candidate packages for {@link HttpServlet} classes to load automatically.
      */
     public Builder withServletClasses(final Set<Class<? extends HttpServlet>> servletClasses) {
-      this.servletClasses = servletClasses;
-      return this;
-    }
-
-    /**
-     * Returns the builder instance.
-     *
-     * @param servletClasses Array of servlet classes to be registered with Jetty's web context. If the specified array is null, and the
-     *          {@code servletInstances} set is null, the {@link EmbeddedJetty9} will scan candidate packages for {@link HttpServlet}
-     *          classes to load automatically.
-     * @return The builder instance.
-     */
-    @SafeVarargs
-    public final Builder withServletClasses(final Class<? extends HttpServlet> ... servletClasses) {
       if (servletClasses != null) {
-        this.servletClasses = new HashSet<>(servletClasses.length);
-        Collections.addAll(this.servletClasses, servletClasses);
+        if (this.servletClasses == null)
+          this.servletClasses = new LinkedHashMap<>(servletClasses.size() * 2);
+
+        if (servletClasses.size() > 0)
+          for (final Class<? extends HttpServlet> servletClass : servletClasses) // [S]
+            addServlet(servletClass, null, null);
       }
       else {
         this.servletClasses = null;
@@ -559,33 +589,70 @@ public class EmbeddedJetty9 implements AutoCloseable {
       return this;
     }
 
-    private Set<HttpServlet> servletInstances;
-
     /**
      * Returns the builder instance.
      *
-     * @param servletInstances Set of servlet instances to be registered with Jetty's web context. If the specified set is null, and the
-     *          {@code servletInstances} set is null, the {@link EmbeddedJetty9} will scan candidate packages for {@link HttpServlet}
-     *          classes to load automatically.
+     * @param servletClasses Array of servlet classes to be registered with Jetty's web context. Calling this method with {@code null}
+     *          will set the {@link #servletClasses} set to null. Calling this method multiple times with non-null values will add to
+     *          (instead of replace) the {@link #servletClasses} set with the provided servlet classes.
      * @return The builder instance.
+     * @implNote If the specified set is null, and the {@link #servletClasses} array is null, the {@link EmbeddedJetty9} will scan
+     *           candidate packages for {@link HttpServlet} classes to load automatically.
      */
-    public Builder withServletInstances(final Set<HttpServlet> servletInstances) {
-      this.servletInstances = servletInstances;
+    @SafeVarargs
+    public final Builder withServletClasses(final Class<? extends HttpServlet> ... servletClasses) {
+      if (servletClasses != null) {
+        if (this.servletClasses == null)
+          this.servletClasses = new LinkedHashMap<>(servletClasses.length * 2);
+
+        for (final Class<? extends HttpServlet> servletClass : servletClasses) // [A]
+          addServlet(servletClass, null, null);
+      }
+      else {
+        this.servletClasses = null;
+      }
+
       return this;
     }
 
     /**
      * Returns the builder instance.
      *
-     * @param servletInstances Array of servlet instances to be registered with Jetty's web context. If the specified array is null, and
-     *          the {@code servletInstances} set is null, the {@link EmbeddedJetty9} will scan candidate packages for
-     *          {@link HttpServlet} classes to load automatically.
+     * @param servletClass Servlet class to be registered with Jetty's web context. Calling this method multiple times will add to
+     *          (instead of replace) the {@link #servletClasses} set with the provided servlet class.
+     * @param webServlet The {@link WebServlet} annotation instance specifying the provided servlet class's configuration. If
+     *          {@code null}, {@link EmbeddedJetty9} will dereference the the {@link WebServlet} annotation present on the specified
+     *          servlet class.
      * @return The builder instance.
+     * @throws NullPointerException If {@code servletClass} is null.
+     * @throws IllegalArgumentException If {@code urlPatterns} is an empty array.
      */
-    public Builder withServletInstances(final HttpServlet ... servletInstances) {
+    public final Builder withServletClass(final Class<? extends HttpServlet> servletClass, final WebServlet webServlet) {
+      if (this.servletClasses == null)
+        this.servletClasses = new LinkedHashMap<>();
+
+      addServlet(servletClass, null, webServlet);
+      return this;
+    }
+
+    /**
+     * Returns the builder instance.
+     *
+     * @param servletInstances Set of servlet instances to be registered with Jetty's web context. Calling this method with {@code null}
+     *          will set the {@link #servletInstances} set to null. Calling this method multiple times with non-null values will add to
+     *          (instead of replace) the {@link #servletInstances} set with the provided servlet instances.
+     * @return The builder instance.
+     * @implNote If the specified set is null, and the {@link #servletInstances} set is null, the {@link EmbeddedJetty9} will scan
+     *           candidate packages for {@link HttpServlet} classes to load automatically.
+     */
+    public Builder withServletInstances(final Set<HttpServlet> servletInstances) {
       if (servletInstances != null) {
-        this.servletInstances = new HashSet<>(servletInstances.length);
-        Collections.addAll(this.servletInstances, servletInstances);
+        if (this.servletInstances == null)
+          this.servletInstances = new LinkedHashMap<>(servletInstances.size() * 2);
+
+        if (servletInstances.size() > 0)
+          for (final HttpServlet servletInstance : servletInstances) // [S]
+            addServlet(servletInstance.getClass(), servletInstance, null);
       }
       else {
         this.servletInstances = null;
@@ -594,34 +661,94 @@ public class EmbeddedJetty9 implements AutoCloseable {
       return this;
     }
 
-    private Set<Class<? extends Filter>> filterClasses;
-
     /**
      * Returns the builder instance.
      *
-     * @param filterClasses Set of filter classes to be registered with Jetty's web context. If the specified set is null, and the
-     *          {@code filterInstances} set is null, the {@link EmbeddedJetty9} will scan candidate packages for {@link Filter} classes
-     *          to load automatically.
+     * @param servletInstances Array of servlet instances to be registered with Jetty's web context. Calling this method multiple times
+     *          will add to (instead of replace) the {@link #servletInstances} set with the provided servlet instances.
      * @return The builder instance.
+     * @implNote If the specified array is null, and the {@link #servletInstances} set is null, the {@link EmbeddedJetty9} will scan
+     *           candidate packages for {@link HttpServlet} classes to load automatically.
      */
-    public Builder withFilterClasses(final Set<Class<? extends Filter>> filterClasses) {
-      this.filterClasses = filterClasses;
+    public Builder withServletInstances(final HttpServlet ... servletInstances) {
+      if (servletInstances != null) {
+        if (this.servletInstances == null)
+          this.servletInstances = new LinkedHashMap<>(servletInstances.length * 2);
+
+        for (final HttpServlet servletInstance : servletInstances) // [A]
+          addServlet(servletInstance.getClass(), servletInstance, null);
+      }
+      else {
+        this.servletInstances = null;
+      }
+
       return this;
     }
 
     /**
      * Returns the builder instance.
      *
-     * @param filterClasses Array of filter classes to be registered with Jetty's web context. If the specified array is null, and the
-     *          {@code filterInstances} set is null, the {@link EmbeddedJetty9} will scan candidate packages for {@link Filter} classes
-     *          to load automatically.
+     * @param servletInstance Servlet instance to be registered with Jetty's web context. Calling this method multiple times will add to
+     *          (instead of replace) the {@link #servletInstances} set with the provided servlet instance.
+     * @param webServlet The {@link WebServlet} annotation instance specifying the provided servlet instance's configuration. If
+     *          {@code null}, {@link EmbeddedJetty9} will dereference the the {@link WebServlet} annotation present on the class of the
+     *          specified servlet instance.
      * @return The builder instance.
+     * @throws NullPointerException If {@code servletInstance} is null.
+     * @throws IllegalArgumentException If {@code urlPatterns} is an empty array.
+     */
+    public Builder withServletInstance(final HttpServlet servletInstance, final WebServlet webServlet) {
+      if (this.servletInstances == null)
+        this.servletInstances = new LinkedHashMap<>();
+
+      this.servletInstances.put(servletInstance, webServlet);
+      return this;
+    }
+
+    /**
+     * Returns the builder instance.
+     *
+     * @param filterClasses Set of filter classes to be registered with Jetty's web context. Calling this method with {@code null} will
+     *          set the {@link #filterClasses} set to null. Calling this method multiple times with non-null values will add to (instead
+     *          of replace) the {@link #filterClasses} set with the provided filter classes.
+     * @return The builder instance.
+     * @implNote If the specified set is null, and the {@link #filterClasses} set is null, the {@link EmbeddedJetty9} will scan
+     *           candidate packages for {@link Filter} classes to load automatically.
+     */
+    public Builder withFilterClasses(final Set<Class<? extends Filter>> filterClasses) {
+      if (servletClasses != null) {
+        if (this.servletClasses == null)
+          this.servletClasses = new LinkedHashMap<>(filterClasses.size() * 2);
+
+        if (servletClasses.size() > 0)
+          for (final Class<? extends Filter> filterClass : filterClasses) // [S]
+            addFilter(filterClass, null, null);
+      }
+      else {
+        this.servletClasses = null;
+      }
+
+      return this;
+    }
+
+    /**
+     * Returns the builder instance.
+     *
+     * @param filterClasses Array of filter classes to be registered with Jetty's web context. Calling this method with {@code null}
+     *          will set the {@link #filterClasses} set to null. Calling this method multiple times with non-null values will add to
+     *          (instead of replace) the {@link #filterClasses} set with the provided filter classes.
+     * @return The builder instance.
+     * @implNote If the specified set is null, and the {@link #filterClasses} array is null, the {@link EmbeddedJetty9} will scan
+     *           candidate packages for {@link Filter} classes to load automatically.
      */
     @SafeVarargs
     public final Builder withFilterClasses(final Class<? extends Filter> ... filterClasses) {
       if (filterClasses != null) {
-        this.filterClasses = new HashSet<>(filterClasses.length);
-        Collections.addAll(this.filterClasses, filterClasses);
+        if (this.filterClasses == null)
+          this.filterClasses = new LinkedHashMap<>(filterClasses.length * 2);
+
+        for (final Class<? extends Filter> filterClass : filterClasses) // [A]
+          addFilter(filterClass, null, null);
       }
       else {
         this.filterClasses = null;
@@ -630,38 +757,92 @@ public class EmbeddedJetty9 implements AutoCloseable {
       return this;
     }
 
-    private Set<Filter> filterInstances;
-
     /**
      * Returns the builder instance.
      *
-     * @param filterInstances Set of filter instances to be registered with Jetty's web context. If the specified set is null, and the
-     *          {@code filterInstances} set is null, the {@link EmbeddedJetty9} will scan candidate packages for {@link Filter} classes
-     *          to load automatically.
+     * @param filterClass Filter class to be registered with Jetty's web context. Calling this method multiple times will add to
+     *          (instead of replace) the {@link #filterClasses} set with the provided filter class.
+     * @param webFilter The {@link WebFilter} annotation instance specifying the provided filter class's configuration. If {@code null},
+     *          {@link EmbeddedJetty9} will dereference the the {@link WebFilter} annotation present on the specified filter class.
      * @return The builder instance.
+     * @throws NullPointerException If {@code filterClass} is null.
+     * @throws IllegalArgumentException If {@code urlPatterns} is an empty array.
      */
-    public Builder withFilterInstances(final Set<Filter> filterInstances) {
-      this.filterInstances = filterInstances;
+    public final Builder withFilterClass(final Class<? extends Filter> filterClass, final WebFilter webFilter) {
+      if (this.filterClasses == null)
+        this.filterClasses = new LinkedHashMap<>();
+
+      addFilter(filterClass, null, webFilter);
       return this;
     }
 
     /**
      * Returns the builder instance.
      *
-     * @param filterInstances Array of filter instances to be registered with Jetty's web context. If the specified array is null, and
-     *          the {@code filterInstances} set is null, the {@link EmbeddedJetty9} will scan candidate packages for {@link Filter}
-     *          classes to load automatically.
+     * @param filterInstances Set of filter instances to be registered with Jetty's web context. Calling this method with {@code null}
+     *          will set the {@link #filterInstances} set to null. Calling this method multiple times with non-null values will add to
+     *          (instead of replace) the {@link #filterInstances} set with the provided filter instances.
      * @return The builder instance.
+     * @implNote If the specified set is null, and the {@link #filterInstances} set is null, the {@link EmbeddedJetty9} will scan
+     *           candidate packages for {@link Filter} classes to load automatically.
      */
-    public Builder withFilterInstances(final Filter ... filterInstances) {
+    public Builder withFilterInstances(final Set<Filter> filterInstances) {
       if (filterInstances != null) {
-        this.filterInstances = new HashSet<>(filterInstances.length);
-        Collections.addAll(this.filterInstances, filterInstances);
+        if (this.filterInstances == null)
+          this.filterInstances = new LinkedHashMap<>(filterInstances.size() * 2);
+
+        if (filterInstances.size() > 0)
+          for (final Filter filterInstance : filterInstances) // [S]
+            addFilter(filterInstance.getClass(), filterInstance, null);
       }
       else {
         this.filterInstances = null;
       }
 
+      return this;
+    }
+
+    /**
+     * Returns the builder instance.
+     *
+     * @param filterInstances Array of filter instances to be registered with Jetty's web context. Calling this method multiple times
+     *          will add to (instead of replace) the {@link #filterInstances} set with the provided filter instances.
+     * @return The builder instance.
+     * @implNote If the specified array is null, and the {@link #filterInstances} set is null, the {@link EmbeddedJetty9} will scan
+     *           candidate packages for {@link Filter} classes to load automatically.
+     */
+    public Builder withFilterInstances(final Filter ... filterInstances) {
+      if (filterInstances != null) {
+        if (this.filterInstances == null)
+          this.filterInstances = new LinkedHashMap<>(filterInstances.length * 2);
+
+        for (final Filter filterInstance : filterInstances) // [A]
+          addFilter(filterInstance.getClass(), filterInstance, null);
+      }
+      else {
+        this.filterInstances = null;
+      }
+
+      return this;
+    }
+
+    /**
+     * Returns the builder instance.
+     *
+     * @param filterInstance Filter instance to be registered with Jetty's web context. Calling this method multiple times will add to
+     *          (instead of replace) the {@link #filterInstances} set with the provided filter instance.
+     * @param webFilter The {@link WebFilter} annotation instance specifying the provided filter instance's configuration. If
+     *          {@code null}, {@link EmbeddedJetty9} will dereference the the {@link WebFilter} annotation present on the class of the
+     *          specified filter instance.
+     * @return The builder instance.
+     * @throws NullPointerException If {@code servletInstance} is null.
+     * @throws IllegalArgumentException If {@code urlPatterns} is an empty array.
+     */
+    public Builder withFilterInstance(final Filter filterInstance, final WebFilter webFilter) {
+      if (this.filterInstances == null)
+        this.filterInstances = new LinkedHashMap<>();
+
+      this.filterInstances.put(filterInstance, webFilter);
       return this;
     }
 
@@ -711,7 +892,14 @@ public class EmbeddedJetty9 implements AutoCloseable {
    *          to load automatically.
    * @throws IllegalArgumentException If port is not between 0 and 65535.
    */
-  public EmbeddedJetty9(final int port, final UncaughtServletExceptionHandler uncaughtServletExceptionHandler, final Set<Class<? extends HttpServlet>> servletClasses, final Set<HttpServlet> servletInstances, final Set<Class<? extends Filter>> filterClasses, final Set<Filter> filterInstances) {
+  public EmbeddedJetty9(
+    final int port,
+    final UncaughtServletExceptionHandler uncaughtServletExceptionHandler,
+    final LinkedHashMap<Class<? extends HttpServlet>,WebServlet> servletClasses,
+    final LinkedHashMap<HttpServlet,WebServlet> servletInstances,
+    final LinkedHashMap<Class<? extends Filter>,WebFilter> filterClasses,
+    final LinkedHashMap<Filter,WebFilter> filterInstances
+  ) {
     this(port, DEFAULT_CONTEXT_PATH, null, null, DEFAULT_EXTERNAL_RESOURCE_ACCESS, DEFAULT_HTTP2, DEFAULT_GZIP_HANDLER, DEFAULT_STOP_AT_SHUTDOWN, DEFAULT_SHUTDOWN_TIMEOUT_MS, DEFAULT_IDLE_TIMEOUT_MS, null, uncaughtServletExceptionHandler, servletClasses, servletInstances, filterClasses, filterInstances);
   }
 
@@ -735,18 +923,18 @@ public class EmbeddedJetty9 implements AutoCloseable {
    * @param idleTimeoutMs The maximum idle time for a connection. See {@link ServerConnector#setIdleTimeout(long)}.
    * @param realm The realm of roles and credentials.
    * @param uncaughtServletExceptionHandler Handler to be used for uncaught servlet exceptions.
-   * @param servletClasses Set of servlet classes to be registered with Jetty's web context. If the specified set is null, and the
-   *          {@code servletInstances} set is null, the {@link EmbeddedJetty9} will scan candidate packages for {@link HttpServlet}
+   * @param servletClassToUrlPatterns Set of servlet classes to be registered with Jetty's web context. If the specified set is null,
+   *          and the {@code servletInstances} set is null, the {@link EmbeddedJetty9} will scan candidate packages for
+   *          {@link HttpServlet} classes to load automatically.
+   * @param servletInstanceToUrlPatterns Set of servlet instances to be registered with Jetty's web context. If the specified set is
+   *          null, and the {@code servletInstances} set is null, the {@link EmbeddedJetty9} will scan candidate packages for
+   *          {@link HttpServlet} classes to load automatically.
+   * @param filterClassToUrlPatterns Set of filter classes to be registered with Jetty's web context. If the specified set is null,
+   *          and the {@code filterInstances} set is null, the {@link EmbeddedJetty9} will scan candidate packages for {@link Filter}
    *          classes to load automatically.
-   * @param servletInstances Set of servlet instances to be registered with Jetty's web context. If the specified set is null, and the
-   *          {@code servletInstances} set is null, the {@link EmbeddedJetty9} will scan candidate packages for {@link HttpServlet}
-   *          classes to load automatically.
-   * @param filterClasses Set of filter classes to be registered with Jetty's web context. If the specified set is null, and the
-   *          {@code filterInstances} set is null, the {@link EmbeddedJetty9} will scan candidate packages for {@link Filter} classes
-   *          to load automatically.
-   * @param filterInstances Set of filter instances to be registered with Jetty's web context. If the specified set is null, and the
-   *          {@code filterInstances} set is null, the {@link EmbeddedJetty9} will scan candidate packages for {@link Filter} classes
-   *          to load automatically.
+   * @param filterInstanceToUrlPatterns Set of filter instances to be registered with Jetty's web context. If the specified set is
+   *          null, and the {@code filterInstances} set is null, the {@link EmbeddedJetty9} will scan candidate packages for
+   *          {@link Filter} classes to load automatically.
    * @throws IllegalArgumentException If port is not between 0 and 65535, or if {@code contextPath} is null.
    */
   public EmbeddedJetty9(
@@ -762,10 +950,10 @@ public class EmbeddedJetty9 implements AutoCloseable {
     final long idleTimeoutMs,
     final Realm realm,
     final UncaughtServletExceptionHandler uncaughtServletExceptionHandler,
-    final Set<Class<? extends HttpServlet>> servletClasses,
-    final Set<HttpServlet> servletInstances,
-    final Set<Class<? extends Filter>> filterClasses,
-    final Set<Filter> filterInstances
+    final Map<Class<? extends HttpServlet>,WebServlet> servletClassToUrlPatterns,
+    final Map<HttpServlet,WebServlet> servletInstanceToUrlPatterns,
+    final Map<Class<? extends Filter>,WebFilter> filterClassToUrlPatterns,
+    final Map<Filter,WebFilter> filterInstanceToUrlPatterns
   ) {
     if (port < 0 || 65535 < port)
       throw new IllegalArgumentException("Port (" + port + ") must be between 0 and 65535");
@@ -796,7 +984,7 @@ public class EmbeddedJetty9 implements AutoCloseable {
     }
 
     contextHandler.setContextPath(contextPath);
-    addAllServlets(contextHandler, uncaughtServletExceptionHandler, servletClasses, servletInstances, filterClasses, filterInstances);
+    addAllServlets(contextHandler, uncaughtServletExceptionHandler, servletClassToUrlPatterns, servletInstanceToUrlPatterns, filterClassToUrlPatterns, filterInstanceToUrlPatterns);
     addConnectors(server, port, http2, idleTimeoutMs, keyStorePath, keyStorePassword);
     handlers.addHandler(contextHandler);
 
